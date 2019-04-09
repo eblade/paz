@@ -92,6 +92,7 @@ def load_config(args):
                     f.write(response.read())
         if os.path.exists(remote_path):
             config.read(remote_path)
+            config.read(config_path)
 
     if args.site is not None:
         site = config[args.site] or default
