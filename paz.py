@@ -92,10 +92,6 @@ def load_config(args):
     if os.path.exists(config_path):
         config.read(config_path)
 
-    if args.site is None:
-        for site in config.sections():
-            print(site)
-
     default = config['DEFAULT']
     remote = default.get('remote')
     if remote and not args.no_remote:
@@ -106,6 +102,10 @@ def load_config(args):
         if os.path.exists(remote_path):
             config.read(remote_path)
             config.read(config_path)
+
+    if args.site is None:
+        for site in config.sections():
+            print(site)
 
     if args.site is not None and args.site in config.sections():
         site = config[args.site] or default
@@ -124,6 +124,17 @@ def load_config(args):
         args.addition = site.get('addition', default.get('addition'))
     if args.wait_time is None:
         args.wait_time = site.getint('wait-time', default.getint('wait-time', 15))
+    if args.bishop_path is None:
+        args.bishop_path = default.get('bishop-path')
+
+
+def bishop(path, s):
+    import subprocess
+    bishop_path = os.path.expanduser(os.path.expandvars(path))
+    m = hashlib.sha512()
+    m.update((s + '\n').encode('utf8'))
+    hashed = m.hexdigest()
+    sys.stderr.write(subprocess.run([bishop_path, hashed], capture_output=True, encoding='utf8').stdout)
 
 
 if __name__ == '__main__':
@@ -143,6 +154,8 @@ if __name__ == '__main__':
     parser.add_argument('-w', '--wait', action='store_true', help='Wait after copy and reset clipboard afterwards')
     parser.add_argument('-W', '--wait-time', type=int, help='Time to wait after copy')
     parser.add_argument('-v', '--verbose', action='store_true', help='Update the latest remote')
+    parser.add_argument('-b', '--bishop', action='store_true', help='Use bishop to paint random art on stderr')
+    parser.add_argument('--bishop-path', help='Path to bishop executable for random art')
     args = parser.parse_args()
 
     load_config(args)
@@ -173,6 +186,9 @@ if __name__ == '__main__':
 
     if not master:
         exit(0)
+
+    if args.bishop and args.bishop_path is not None:
+        bishop(args.bishop_path, master)
 
     seed = master + ':' + args.site
     if args.revision:
