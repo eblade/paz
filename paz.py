@@ -6,7 +6,6 @@ import hashlib
 import base64
 import re
 import argparse
-import getpass
 import time
 
 
@@ -69,6 +68,20 @@ def iterate(s: str, hash_fun, length=15, min_iters=10) -> str:
     return chopped
 
 
+def getpass(query: str):
+    if 'win' in sys.platform:
+        import subprocess
+        sys.stdout.flush()
+        sys.stderr.write(query)
+        sys.stderr.flush()
+        subprocess.check_call(["stty","-echo"])
+        password = input()
+        subprocess.check_call(["stty","echo"])
+        return password
+    else:
+        import getpass
+        return getpass.getpass(query)
+
 def load_config(args):
     import urllib.request, configparser
 
@@ -84,7 +97,7 @@ def load_config(args):
             print(site)
 
     default = config['DEFAULT']
-    remote = default['remote']
+    remote = default.get('remote')
     if remote and not args.no_remote:
         if args.update_remote:
             with urllib.request.urlopen(remote) as response:
@@ -94,7 +107,7 @@ def load_config(args):
             config.read(remote_path)
             config.read(config_path)
 
-    if args.site is not None:
+    if args.site is not None and args.site in config.sections():
         site = config[args.site] or default
     else:
         site = default
@@ -156,7 +169,7 @@ if __name__ == '__main__':
     if args.master:
         master = args.master
     else:
-        master = getpass.getpass('Password: ')
+        master = getpass('Password: ')
 
     if not master:
         exit(0)
@@ -181,12 +194,12 @@ if __name__ == '__main__':
         import pyperclip
         pyperclip.copy(result)
         if not args.stdout:
-            print('Copied the password to clipboard')
+            print('Copied the password to clipboard', flush=True)
             if args.wait:
-                print('It will expire in %d seconds' % args.wait_time)
+                print('It will expire in %d seconds' % args.wait_time, flush=True)
 
         if args.wait:
             time.sleep(args.wait_time)
             pyperclip.copy('x')
             if not args.stdout:
-                print('The password has expired')
+                print('The password has expired', flush=True)
