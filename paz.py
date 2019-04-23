@@ -160,6 +160,9 @@ if __name__ == '__main__':
 
     load_config(args)
 
+    if args.stdout:
+        args.copy = False
+
     if args.verbose:
         print('site =', args.site)
         print('hash =', args.hash)
