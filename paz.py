@@ -126,6 +126,8 @@ def load_config(args):
         args.wait_time = site.getint('wait-time', default.getint('wait-time', 15))
     if args.bishop_path is None:
         args.bishop_path = default.get('bishop-path')
+    if args.strategy is None:
+        args.strategy = site.get('strategy', default.get('strategy', 'default'))
 
 
 def bishop(path, s):
@@ -156,6 +158,7 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', action='store_true', help='Update the latest remote')
     parser.add_argument('-b', '--bishop', action='store_true', help='Use bishop to paint random art on stderr')
     parser.add_argument('--bishop-path', help='Path to bishop executable for random art')
+    parser.add_argument('--strategy', help='Use a strategy')
     args = parser.parse_args()
 
     load_config(args)
@@ -185,7 +188,7 @@ if __name__ == '__main__':
     if args.master:
         master = args.master
     else:
-        master = getpass('Password: ')
+        master = getpass('Password (%s): ' % args.strategy)
 
     if not master:
         exit(0)
