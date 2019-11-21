@@ -128,6 +128,8 @@ def load_config(args):
         args.bishop_path = default.get('bishop-path')
     if args.strategy is None:
         args.strategy = site.get('strategy', default.get('strategy', 'default'))
+    if args.username is None:
+        args.username = site.get('username', default.get('username'))
 
 
 def bishop(path, s):
@@ -158,7 +160,8 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', action='store_true', help='Update the latest remote')
     parser.add_argument('-b', '--bishop', action='store_true', help='Use bishop to paint random art on stderr')
     parser.add_argument('--bishop-path', help='Path to bishop executable for random art')
-    parser.add_argument('--strategy', help='Use a strategy')
+    parser.add_argument('--strategy', help='Specify a strategy')
+    parser.add_argument('--username', help='Specify a username')
     args = parser.parse_args()
 
     load_config(args)
@@ -181,6 +184,8 @@ if __name__ == '__main__':
         print('update-remote =', args.update_remote)
         print('wait =', args.wait)
         print('wait-time =', args.wait_time)
+        print('strategy =', args.strategy)
+        print('username =', args.username)
 
     if not args.site:
         exit(0)
@@ -188,7 +193,11 @@ if __name__ == '__main__':
     if args.master:
         master = args.master
     else:
-        master = getpass('Password (%s): ' % args.strategy)
+        if args.username:
+            question = 'Password for %s (%s): ' % (args.username, args.strategy)
+        else:
+            question = 'Password (%s): ' % (args.strategy, )
+        master = getpass(question)
 
     if not master:
         exit(0)
