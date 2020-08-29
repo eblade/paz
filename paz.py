@@ -94,24 +94,62 @@ def load_config(args):
 
     default = config['DEFAULT']
     remote = default.get('remote')
+    remote_gpg = default.getboolean('remote-gpg')
     if remote and not args.no_remote:
         if args.update_remote:
+            print('Downloading', remote)
             with urllib.request.urlopen(remote) as response:
-                with open(remote_path, 'wb') as f:
-                    f.write(response.read())
+                remote_data = response.read()
+            print('Download complete', len(remote_data), 'bytes')
+            with open(remote_path, 'wb') as f:
+                if remote_gpg:
+                    import gpg
+                    print('Remote config is encrypted. Need key.')
+
+                    with gpg.Context() as c:
+                        try:
+                            plain, result, _ = c.decrypt(remote_data)
+                        except gpg.errors.GPGMEError:
+                            remote_site = config['remote']
+                            if not remote_site:
+                                raise KeyError('Missing section in local config: [remote]')
+                            complete_args(default, args, remote_site)
+                            master = get_master(args)
+
+                            if not master:
+                                print('Abort.')
+                                exit(0)
+
+                            passphrase = get_result(args, master, 'remote')
+                            plain, result, _ = c.decrypt(remote_data, passphrase=passphrase)
+
+                        print(plain.decode('utf8'))
+                        print(result)
+                        if result:
+                            print('Decryption successful. Writing to', remote_path)
+                            f.write(plain)
+                else:
+                    print('Remote config is not encrypted. Writing to', remote_path)
+                    f.write(remote_data)
+
         if os.path.exists(remote_path):
             config.read(remote_path)
             config.read(config_path)
 
     if args.site is None:
+        print('Available sites:')
         for site in config.sections():
-            print(site)
+            print('*', site)
 
     if args.site is not None and args.site in config.sections():
         site = config[args.site] or default
     else:
         site = default
 
+    complete_args(default, args, site)
+
+
+def complete_args(default, args, site):
     if args.hash is None:
         args.hash = site.get('hash', default.get('hash', 'sha512'))
     if args.length is None:
@@ -139,6 +177,33 @@ def bishop(path, s):
     m.update((s + '\n').encode('utf8'))
     hashed = m.hexdigest()
     sys.stderr.write(subprocess.run([bishop_path, hashed], capture_output=True, encoding='utf8').stdout)
+
+def get_master(args):
+    if args.master:
+        return args.master
+    else:
+        if args.username:
+            question = 'Password for %s (%s): ' % (args.username, args.strategy)
+        else:
+            question = 'Password (%s): ' % (args.strategy, )
+        return getpass(question)
+
+
+def get_result(args, master, site=None):
+    seed = master + ':' + (site or args.site)
+    if args.revision:
+        seed += str(args.revision)
+
+    if args.verbose:
+        print('Using hash', args.hash)
+
+    hash_fun = HashFunctions.get(args.hash)
+
+    result = iterate(seed, hash_fun, length=args.length, min_iters=args.min_iterations)
+    if args.addition:
+        result += args.addition
+
+    return result
 
 
 if __name__ == '__main__':
@@ -190,14 +255,7 @@ if __name__ == '__main__':
     if not args.site:
         exit(0)
 
-    if args.master:
-        master = args.master
-    else:
-        if args.username:
-            question = 'Password for %s (%s): ' % (args.username, args.strategy)
-        else:
-            question = 'Password (%s): ' % (args.strategy, )
-        master = getpass(question)
+    master = get_master(args)
 
     if not master:
         exit(0)
@@ -205,15 +263,7 @@ if __name__ == '__main__':
     if args.bishop and args.bishop_path is not None:
         bishop(args.bishop_path, master)
 
-    seed = master + ':' + args.site
-    if args.revision:
-        seed += str(args.revision)
-
-    hash_fun = HashFunctions.get(args.hash)
-
-    result = iterate(seed, hash_fun, length=args.length, min_iters=args.min_iterations)
-    if args.addition:
-        result += args.addition
+    result = get_result(args, master)
 
     if args.linebreak:
         result += os.linesep
