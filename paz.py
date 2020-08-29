@@ -108,7 +108,12 @@ def load_config(args):
 
                     with gpg.Context() as c:
                         try:
-                            plain, result, _ = c.decrypt(remote_data)
+                            # Do note use the default passphrase dialog (this succeeds
+                            # if the passphrase is cached)
+                            plain, result, _ = c.decrypt(remote_data, passphrase='blerg')
+
+                            # If failing, this means the passphrase was not cached. Need
+                            # ask for a hashed one for the site "remote"
                         except gpg.errors.GPGMEError:
                             remote_site = config['remote']
                             if not remote_site:
