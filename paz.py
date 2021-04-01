@@ -142,9 +142,8 @@ def load_config(args):
             config.read(config_path)
 
     if args.site is None:
-        print('Available sites:')
         for site in config.sections():
-            print('*', site)
+            print(site)
 
     if args.site is not None and args.site in config.sections():
         site = config[args.site] or default
