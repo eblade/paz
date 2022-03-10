@@ -98,7 +98,8 @@ def load_config(args):
     if remote and not args.no_remote:
         if args.update_remote:
             print('Downloading', remote)
-            with urllib.request.urlopen(remote) as response:
+            req = urllib.request.Request(remote, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response:
                 remote_data = response.read()
             print('Download complete', len(remote_data), 'bytes')
             with open(remote_path, 'wb') as f:
@@ -108,7 +109,7 @@ def load_config(args):
 
                     with gpg.Context() as c:
                         try:
-                            # Do note use the default passphrase dialog (this succeeds
+                            # Do not use the default passphrase dialog (this succeeds
                             # if the passphrase is cached)
                             plain, result, _ = c.decrypt(remote_data, passphrase='blerg')
 
@@ -128,8 +129,6 @@ def load_config(args):
                             passphrase = get_result(args, master, 'remote')
                             plain, result, _ = c.decrypt(remote_data, passphrase=passphrase)
 
-                        print(plain.decode('utf8'))
-                        print(result)
                         if result:
                             print('Decryption successful. Writing to', remote_path)
                             f.write(plain)
