@@ -6,47 +6,114 @@ import crypto.sha256
 import crypto.sha512
 import crypto.md5
 import encoding.base64
+import ui
+//import clipboard
+
+[heap]
+struct State {
+	mut:
+	window &ui.Window = voidptr(0)
+	master string
+	site string
+	revision string
+	addition string
+	length string
+	hash &ui.Radio
+	password &ui.Label
+}
 
 fn main() {
-	mut fp := flag.new_flag_parser(os.args)
-	fp.application('paz')
-	fp.version('v0.1')
-	fp.limit_free_args(0, 1)?
-	fp.description('Generate passwords from a master password and a site-specific seed')
-	fp.skip_executable()
-
-	hash := fp.string('hash', `H`, '', 'The hash function to use (md5, sha256 or sha512)')
-	master := fp.string('master', `m`, '', 'The master password (will be asked for if omitted)')
-	length := fp.int('length', `n`, 0, 'Generated password length')
-	min_iterations := fp.int('min-iterations', `i`, 0, 'Hash the data at least this many times')
-	revision := fp.int('revision', `r`, 0, 'Password revision (bump when changing password)')
-	addition := fp.string('addition', `a`, '', 'Password suffix (if special char is needed)')
-	stdout := fp.bool('stdout', `s`, false, 'Print password to stdout')
-	linebreak := fp.bool('linebreak', `l`, false, 'Add a linebreak to the result')
-	verbose := fp.bool('verbose', `v`, false, 'Print additional information to stderr')
-	additional_args := fp.finalize() or {
-		eprintln(err)
-		println(fp.usage())
-		return
+	mut app := &State{
+		hash: ui.radio(
+			width: 200
+			values: ['md5', 'sha256', 'sha512']
+			title: 'Hash function'
+		)
+		password: ui.label(text: 'n/a')
 	}
-	site := additional_args[0]
+	window := ui.window(
+		width: 700
+		height: 500
+		title: 'Paz'
+		children: [
+			ui.row(
+				margin: ui.Margin{10, 10, 10, 10}
+				widths: [200.0, ui.stretch]
+				spacing: 30
+				children: [
+					ui.column(
+						spacing: 13
+						children: [
+							ui.textbox(
+								max_len: 30
+								width: 200
+								placeholder: 'Master password'
+								text: &app.master
+								is_focused: true
+								is_password: true
+							),
+							ui.textbox(
+								max_len: 30
+								width: 200
+								placeholder: 'Site'
+								text: &app.site
+							),
+							ui.textbox(
+								max_len: 30
+								width: 200
+								placeholder: 'Revision'
+								text: &app.revision
+								is_numeric: true
+							),
+							ui.textbox(
+								max_len: 30
+								width: 200
+								placeholder: 'Addition'
+								text: &app.addition
+							),
+							ui.textbox(
+								max_len: 30
+								width: 200
+								placeholder: 'Length'
+								text: &app.length
+								is_numeric: true
+							),
+							app.hash,
+							ui.row(
+								spacing: 5
+								children: [
+									ui.button(
+										text: 'Generate'
+										on_click: app.on_generate
+									),
+									app.password,
+								]
+							),
+						]
+					)
+				]
+			),
+		]
+	)
+	app.window = window
+	ui.run(window)
+}
+
+fn (mut app State) on_generate(b &ui.Button) {
+	length := app.length.int()
+	revision := app.revision.int()
 	mut job := Job{
-		site: site
-		master: master
-		hasher: get_hasher(hash)
+		site: app.site
+		master: app.master
+		hasher: get_hasher(app.hash.selected_value())
 		length: if length == 0 { 15 } else { length }
 		revision: revision
-		addition: addition
-		min_iterations: if min_iterations == 0 { 10 } else { min_iterations }
-		linebreak: linebreak
+		addition: app.addition
+		min_iterations: 10
+		linebreak: false
 	}
 	job.calculate()
-	if verbose {
-		eprintln(job)
-	}
-	if stdout {
-		print(job.data)
-	}
+	app.password.set_text(job.data)
 }
 
 
