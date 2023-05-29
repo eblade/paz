@@ -220,7 +220,8 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--addition', help='Add this suffix to the password')
     parser.add_argument('-s', '--stdout', action='store_true', help='Print password to stdout')
     parser.add_argument('-l', '--linebreak', action='store_true', help='Adds a linebreak to the result')
-    parser.add_argument('-c', '--copy', action='store_true', help='Copy result to clipboard')
+    parser.add_argument('-c', '--copy', action='store_true', help='Copy result to secondary clipboard (Ctrl-C)')
+    parser.add_argument('-p', '--primary', action='store_true', help='Copy result to primary clipboard (Middle-click)')
     parser.add_argument('-R', '--no-remote', action='store_true', help='Do not load remote configs')
     parser.add_argument('-u', '--update-remote', action='store_true', help='Update the latest remote')
     parser.add_argument('-w', '--wait', action='store_true', help='Wait after copy and reset clipboard afterwards')
@@ -234,8 +235,8 @@ if __name__ == '__main__':
 
     load_config(args)
 
-    if args.stdout:
-        args.copy = False
+    if args.stdout and (args.copy or args.primary):
+        print('Cannot specify both stdout and copy/primary')
 
     if args.verbose:
         print('site =', args.site)
@@ -247,6 +248,7 @@ if __name__ == '__main__':
         print('stdout =', args.stdout)
         print('linebreak =', args.linebreak)
         print('copy =', args.copy)
+        print('primary =', args.primary)
         print('wait =', args.wait)
         print('no-remote =', args.no_remote)
         print('update-remote =', args.update_remote)
@@ -274,9 +276,9 @@ if __name__ == '__main__':
     if args.stdout:
         sys.stdout.write(result)
 
-    if args.copy:
+    if args.copy or args.primary:
         import pyperclip
-        pyperclip.copy(result)
+        pyperclip.copy(result, primary=args.primary)
         if not args.stdout:
             print('Copied the password to clipboard', flush=True)
             if args.wait:
@@ -284,6 +286,5 @@ if __name__ == '__main__':
 
         if args.wait:
             time.sleep(args.wait_time)
-            pyperclip.copy('x')
-            if not args.stdout:
-                print('The password has expired', flush=True)
+            pyperclip.copy('x', primary=args.primary)
+            print('The password has expired', flush=True)
