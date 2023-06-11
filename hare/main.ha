@@ -80,19 +80,44 @@ export fn main() void = {
 
 	if (cfg.verbose) print_config(cfg)!;
 
-	const start = strings::toutf8(strings::join(":", cfg.master, cfg.site));
-	fmt::println(strings::fromutf8(start)!)!;
-	fmt::printfln("Length {}", len(start))!;
-	const hashed: [sha512::SIZE]u8 = [0...];
-	do_sha512(start, &hashed)!;
-	const encoded: [128]u8 = [0...];
-	const length = do_encode(hashed, &encoded)!;
-	fmt::printfln("Length {}", length)!;
-	const result = strings::fromutf8(encoded[..length])!;
-	hex::encode(os::stdout, encoded[..length])!;
-	fmt::println("")!;
+	const start = strings::join(":", cfg.master, cfg.site);
+	const result = iterate(start, cfg.iterations, cfg.length)!;
 	fmt::println(result)!;
-	fmt::println("hej")!;
+
+	//const start = strings::toutf8(strings::join(":", cfg.master, cfg.site));
+	//fmt::println(strings::fromutf8(start)!)!;
+	//fmt::printfln("Length {}", len(start))!;
+	//const hashed: [sha512::SIZE]u8 = [0...];
+	//do_sha512(start, &hashed)!;
+	//const encoded: [128]u8 = [0...];
+	//const length = do_encode(hashed, &encoded)!;
+	//fmt::printfln("Length {}", length)!;
+	//const result = strings::fromutf8(encoded[..length])!;
+	//hex::encode(os::stdout, encoded[..length])!;
+	//fmt::println("")!;
+	//fmt::println(result)!;
+	//fmt::println("hej")!;
+};
+
+fn iterate(in: str, iterations: int, plength: int) (str | io::error) = {
+	const a = strings::toutf8(in);
+	const b: [sha512::SIZE]u8 = [0...];
+	const c: [sha512::SIZE * 2]u8 = [0...];
+
+	let n = 0;
+	for (true) {
+		do_sha512(a, &b)?;
+		const length = do_encode(b, &c)?;
+		a = c[..length];
+		fmt::printfln("{}\t{}", n, strings::fromutf8(a)!)?;
+
+		n += 1;
+		if (n >= iterations) {
+			break;
+		};
+	};
+
+	return strings::fromutf8(a[..plength])!;
 };
 
 fn do_sha512(in: []u8, out: []u8) (void | io::error) = {

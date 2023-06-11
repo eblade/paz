@@ -56,12 +56,10 @@ def check_it(s):
 def iterate(s: str, hash_fun, length=15, min_iters=10, debug=False) -> str:
     n = 0
     while True:
-        if debug:
-            print('IN ', n, '\t', s)
         s = hash_fun(s.encode('utf-8'))
         s = encode(s)
         if debug:
-            print('OUT', n, '\t', s)
+            print(n, '\t', s)
         n += 1
 
         if n < min_iters: continue
