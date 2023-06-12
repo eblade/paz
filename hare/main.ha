@@ -21,6 +21,7 @@ type config = struct {
 	stdout: bool,
 	linebreak: bool,
 	verbose: bool,
+	debug: bool,
 };
 
 export fn main() void = {
@@ -35,6 +36,7 @@ export fn main() void = {
 		('s', "print result to stdout"),
 		('l', "add a line break to the result"),
 		('v', "print out the config and maybe other stuff too"),
+		('d', "print out more debug"),
 		"site",
 	);
 	defer getopt::finish(&cmd);
@@ -72,6 +74,8 @@ export fn main() void = {
 			cfg.linebreak = true;
 		case 'v' =>
 			cfg.verbose = true;
+		case 'd' =>
+			cfg.debug = true;
 		case => abort();
 		};
 	};
@@ -81,25 +85,11 @@ export fn main() void = {
 	if (cfg.verbose) print_config(cfg)!;
 
 	const start = strings::join(":", cfg.master, cfg.site);
-	const result = iterate(start, cfg.iterations, cfg.length)!;
-	fmt::println(result)!;
-
-	//const start = strings::toutf8(strings::join(":", cfg.master, cfg.site));
-	//fmt::println(strings::fromutf8(start)!)!;
-	//fmt::printfln("Length {}", len(start))!;
-	//const hashed: [sha512::SIZE]u8 = [0...];
-	//do_sha512(start, &hashed)!;
-	//const encoded: [128]u8 = [0...];
-	//const length = do_encode(hashed, &encoded)!;
-	//fmt::printfln("Length {}", length)!;
-	//const result = strings::fromutf8(encoded[..length])!;
-	//hex::encode(os::stdout, encoded[..length])!;
-	//fmt::println("")!;
-	//fmt::println(result)!;
-	//fmt::println("hej")!;
+	const result = iterate(start, cfg.iterations, cfg.length, cfg.debug)!;
+	fmt::println(*result)!;
 };
 
-fn iterate(in: str, iterations: int, plength: int) (str | io::error) = {
+fn iterate(in: str, iterations: int, plength: int, debug: bool) (*str | io::error) = {
 	const a = strings::toutf8(in);
 	const b: [sha512::SIZE]u8 = [0...];
 	const c: [sha512::SIZE * 2]u8 = [0...];
@@ -109,19 +99,55 @@ fn iterate(in: str, iterations: int, plength: int) (str | io::error) = {
 		do_sha512(a, &b)?;
 		const length = do_encode(b, &c)?;
 		a = c[..length];
-		fmt::printfln("{}\t{}", n, strings::fromutf8(a)!)?;
+		if (debug) {
+			fmt::printfln("{}\t{}", n, strings::fromutf8(a[..plength])!)?;
+		};
 
 		n += 1;
-		if (n >= iterations) {
-			break;
+		if (n < iterations) {
+			continue;
 		};
+		if (n > 20) { break; };
+
+		if (!(a[0] >= 'a' && a[0] <= 'z')) {
+			if (debug) {
+				fmt::println("does not start with lowercase")?;
+			};
+			continue;
+		};
+
+		let containsUpper = false;
+		let containsNumeral = false;
+		for (let i = 1; !(containsUpper && containsNumeral) && i < plength; i += 1) {
+			if ((a[i] >= 'A' && a[i] <= 'Z')) {
+				containsUpper = true;
+			} else if ((a[i] >= '0' && a[i] <= '9')) {
+				containsNumeral = true;
+			};
+		};
+
+		if (!containsUpper) {
+			if (debug) {
+				fmt::println("does not contain uppercase")?;
+			};
+			continue;
+		} else if (!containsNumeral) {
+			if (debug) {
+				fmt::println("does not contain numeral")?;
+			};
+			continue;
+		};
+
+
+		break;
 	};
 
-	return strings::fromutf8(a[..plength])!;
+	return &strings::fromutf8(a[..plength])!;
 };
 
 fn do_sha512(in: []u8, out: []u8) (void | io::error) = {
 	const hash = sha512::sha512();
+	defer hash::close(&hash);
 	io::writeall(&hash, in)?;
 	hash::sum(&hash, out);
 };
@@ -156,6 +182,7 @@ fn create_default_config() config = {
 		stdout = false,
 		linebreak = false,
 		verbose = false,
+		debug = false,
 	};
 };
 
