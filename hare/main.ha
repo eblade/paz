@@ -83,27 +83,8 @@ export fn main() void = {
 
 	cfg.site = cmd.args[0];
 
-	if (cfg.verbose) print_config(cfg)!;
-
-	if (len(cfg.master) == 0) {
-		fmt::error("Password: ")!;
-		bufio::flush(os::stdout)!;
-		const tty = match (tty::open()) {
-		case let file: io::file =>
-			yield file;
-		case let err: tty::error =>
-			fmt::fatal("Error opening tty:", tty::strerror(err));
-		};
-		defer io::close(tty)!;
-		const termios = tty::termios_query(tty)!;
-		defer tty::termios_restore(&termios);
-		tty::noecho(&termios)!;
-		cfg.master = strings::fromutf8(bufio::scanline(os::stdin)! as []u8)!;
-		fmt::println()!;
-	};
-	if (len(cfg.master) == 0) {
-		fmt::fatal("Error: missing master password");
-	};
+	if (cfg.verbose) print_config(&cfg)!;
+	ensure_master(&cfg)!;
 
 	const start = strings::join(":", cfg.master, cfg.site);
 	const hash = sha512::sha512();
@@ -203,7 +184,7 @@ fn create_default_config() config = {
 	};
 };
 
-fn print_config(cfg: config) (void | io::error) = {
+fn print_config(cfg: *config) (void | io::error) = {
 	fmt::fprintfln(os::stderr, "site: {}", cfg.site)?;
 	fmt::fprintfln(os::stderr, "hashname: {}", cfg.hashname)?;
 	fmt::fprintfln(os::stderr, "length: {}", cfg.length)?;
@@ -212,6 +193,28 @@ fn print_config(cfg: config) (void | io::error) = {
 	fmt::fprintfln(os::stderr, "addition: {}", cfg.addition)?;
 	fmt::fprintfln(os::stderr, "stdout: {}", cfg.stdout)?;
 	fmt::fprintfln(os::stderr, "linebreak: {}", cfg.linebreak)?;
+};
+
+fn ensure_master(cfg: *config) (void | io::error) = {
+	if (len(cfg.master) == 0) {
+		fmt::error("Password: ")!;
+		bufio::flush(os::stdout)!;
+		const tty = match (tty::open()) {
+		case let file: io::file =>
+			yield file;
+		case let err: tty::error =>
+			fmt::fatal("Error opening tty:", tty::strerror(err));
+		};
+		defer io::close(tty)!;
+		const termios = tty::termios_query(tty)!;
+		defer tty::termios_restore(&termios);
+		tty::noecho(&termios)!;
+		cfg.master = strings::fromutf8(bufio::scanline(os::stdin)! as []u8)!;
+		fmt::println()!;
+	};
+	if (len(cfg.master) == 0) {
+		fmt::fatal("Error: missing master password");
+	};
 };
 
 //@test fn hash_and_encode() void = {
