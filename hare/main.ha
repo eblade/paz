@@ -9,6 +9,7 @@ use hash;
 use strings;
 use encoding::hex;
 use encoding::base64;
+use unix::tty;
 
 type config = struct {
 	site: str,
@@ -83,6 +84,26 @@ export fn main() void = {
 	cfg.site = cmd.args[0];
 
 	if (cfg.verbose) print_config(cfg)!;
+
+	if (len(cfg.master) == 0) {
+		fmt::error("Password: ")!;
+		bufio::flush(os::stdout)!;
+		const tty = match (tty::open()) {
+		case let file: io::file =>
+			yield file;
+		case let err: tty::error =>
+			fmt::fatal("Error opening tty:", tty::strerror(err));
+		};
+		defer io::close(tty)!;
+		const termios = tty::termios_query(tty)!;
+		defer tty::termios_restore(&termios);
+		tty::noecho(&termios)!;
+		cfg.master = strings::fromutf8(bufio::scanline(os::stdin)! as []u8)!;
+		fmt::println()!;
+	};
+	if (len(cfg.master) == 0) {
+		fmt::fatal("Error: missing master password");
+	};
 
 	const start = strings::join(":", cfg.master, cfg.site);
 	const hash = sha512::sha512();
