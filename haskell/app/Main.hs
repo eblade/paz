@@ -21,10 +21,10 @@ main = do
     putStrLn (show iterations)
         where
             config = Configuration {
-                site="site",
+                site="sites",
                 master="master",
                 plength=15,
-                miniterations=10 }
+                miniterations=1000000 }
             start = makeStart (master config) (site config)
             calculate = calculate' (plength config)
             (iterations, result) = pazify calculate (check (plength config) (miniterations config)) start
@@ -38,8 +38,6 @@ translate 47 = 56 -- / -> 8
 translate 61 = 65 -- = -> A
 translate x = x
 
--- calculate :: ByteString -> ByteString
--- calculate = calculate' 15
 calculate' :: Int -> ByteString -> ByteString
 calculate' length s = B.map translate (Base64.encode digest)
     where
@@ -48,7 +46,7 @@ calculate' length s = B.map translate (Base64.encode digest)
         ctx0 = SHA512.init
 
 check :: Int -> Int -> Int -> ByteString -> Bool
-check plength miniterations n x = enough && (startsWithLowerCase pw) && (hasTheStuffNoKnowns pw)
+check plength miniterations n x = enough && (startsWithLowerCase pw) && (hasTheStuff pw)
     where
         enough = (n >= miniterations)
         pw = B.take plength x
@@ -56,39 +54,23 @@ check plength miniterations n x = enough && (startsWithLowerCase pw) && (hasTheS
 startsWithLowerCase :: ByteString -> Bool
 startsWithLowerCase x = ((B.head x) >= 97) && ((B.head x) <= 122)
 
-hasTheStuffNoKnowns :: ByteString -> Bool
-hasTheStuffNoKnowns x =
-    if B.null x
-    then False
-    else if isUpperCase x0
-        then hasTheStuffKnownToHaveUppers (B.tail x)
-        else if isNumber x0
-            then hasTheStuffKnownToHaveNumbers (B.tail x)
-            else hasTheStuffNoKnowns (B.tail x)
-    where x0 = B.head x
+hasTheStuff :: ByteString -> Bool
+hasTheStuff = hasTheStuff' False False
+hasTheStuff' :: Bool -> Bool -> ByteString -> Bool
+hasTheStuff' hasUpper hasNumber x
+    | B.null x = False
+    | hasNumber && isUpper = True
+    | hasUpper && isNumber = True
+    | otherwise = hasTheStuff' (hasUpper || isUpper) (hasNumber || isNumber) (B.tail x)
+    where
+        isUpper = wordIsUpper x0
+        isNumber = wordIsNumber x0
+        x0 = B.head x
 
-hasTheStuffKnownToHaveUppers :: ByteString -> Bool
-hasTheStuffKnownToHaveUppers x =
-    if B.null x
-    then False
-    else if isNumber x0
-        then True
-        else hasTheStuffKnownToHaveUppers (B.tail x)
-    where x0 = B.head x
-
-hasTheStuffKnownToHaveNumbers :: ByteString -> Bool
-hasTheStuffKnownToHaveNumbers x =
-    if B.null x
-    then False
-    else if isUpperCase x0
-        then True
-        else hasTheStuffKnownToHaveNumbers (B.tail x)
-    where x0 = B.head x
-
-isUpperCase :: Word8 -> Bool 
-isUpperCase x = x >= 65 && x <= 90
-isNumber :: Word8 -> Bool 
-isNumber x = x >= 48 && x <= 57
+wordIsUpper :: Word8 -> Bool 
+wordIsUpper x = x >= 65 && x <= 90
+wordIsNumber :: Word8 -> Bool 
+wordIsNumber x = x >= 48 && x <= 57
 
 pazify :: (ByteString -> ByteString) -> (Int -> ByteString -> Bool) -> ByteString -> (Int, ByteString)
 pazify = pazify' 1
