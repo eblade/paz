@@ -18,7 +18,7 @@ main :: IO ()
 main = do
     hSetBuffering stdin LineBuffering
     putStrLn (C.unpack (B.take (plength config) result))
-    putStrLn (show iterations)
+    hPutStrLn stderr (show (iterations) ++ " iterations")
         where
             config = Configuration {
                 site="sites",
@@ -32,11 +32,14 @@ main = do
 makeStart :: String -> String -> ByteString
 makeStart master site = C.pack (master ++ ":" ++ site)
 
-translate :: Word8 -> Word8
-translate 43 = 57 -- + -> 9
-translate 47 = 56 -- / -> 8 
-translate 61 = 65 -- = -> A
-translate x = x
+pazify :: (ByteString -> ByteString) -> (Int -> ByteString -> Bool) -> ByteString -> (Int, ByteString)
+pazify = pazify' 1
+pazify' :: Int -> (ByteString -> ByteString) -> (Int -> ByteString -> Bool) -> ByteString -> (Int, ByteString)
+pazify' n f p xn_1
+    | p n xn = (n, xn)
+    | otherwise = pazify' (n+1) f p xn
+    where
+        xn = f xn_1
 
 calculate' :: Int -> ByteString -> ByteString
 calculate' length s = B.map translate (Base64.encode digest)
@@ -44,6 +47,12 @@ calculate' length s = B.map translate (Base64.encode digest)
         digest = SHA512.finalize ctx
         ctx = SHA512.update ctx0 s
         ctx0 = SHA512.init
+
+translate :: Word8 -> Word8
+translate 43 = 57 -- + -> 9
+translate 47 = 56 -- / -> 8 
+translate 61 = 65 -- = -> A
+translate x = x
 
 check :: Int -> Int -> Int -> ByteString -> Bool
 check plength miniterations n x = enough && (startsWithLowerCase pw) && (hasTheStuff pw)
@@ -71,11 +80,3 @@ wordIsUpper :: Word8 -> Bool
 wordIsUpper x = x >= 65 && x <= 90
 wordIsNumber :: Word8 -> Bool 
 wordIsNumber x = x >= 48 && x <= 57
-
-pazify :: (ByteString -> ByteString) -> (Int -> ByteString -> Bool) -> ByteString -> (Int, ByteString)
-pazify = pazify' 1
-pazify' :: Int -> (ByteString -> ByteString) -> (Int -> ByteString -> Bool) -> ByteString -> (Int, ByteString)
-pazify' n calculate p x0 =
-    if p n x then (n, x) else pazify' (n+1) calculate p x
-        where
-            x = calculate x0
