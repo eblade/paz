@@ -53,14 +53,14 @@ def check_it(s):
     )
 
 
-def iterate(s: str, hash_fun, length=15, min_iters=10, debug=False) -> str:
+def iterate(s: str, hash_fun, length=15, min_iters=10, debug=False, debug_lite=False) -> str:
     n = 0
     while True:
         s = hash_fun(s.encode('utf-8'))
         s = encode(s)
-        if debug:
-            print(n, '\t', s)
         n += 1
+        if debug or (debug_lite and n >= (min_iters - 10)):
+            print(n, '\t', s)
 
         if n < min_iters: continue
 
@@ -204,7 +204,7 @@ def get_result(args, master, site=None):
 
     hash_fun = HashFunctions.get(args.hash)
 
-    result = iterate(seed, hash_fun, length=args.length, min_iters=args.min_iterations, debug=args.debug)
+    result = iterate(seed, hash_fun, length=args.length, min_iters=args.min_iterations, debug=args.debug, debug_lite=args.debug_lite)
     if args.addition:
         result += args.addition
 
@@ -230,6 +230,7 @@ if __name__ == '__main__':
     parser.add_argument('-W', '--wait-time', type=int, help='Time to wait after copy')
     parser.add_argument('-v', '--verbose', action='store_true', help='Show the resulting config')
     parser.add_argument('-d', '--debug', action='store_true', help='Print some debug info along the way')
+    parser.add_argument('-D', '--debug-lite', action='store_true', help='Print a little debug info along the way')
     parser.add_argument('-b', '--bishop', action='store_true', help='Use bishop to paint random art on stderr')
     parser.add_argument('--bishop-path', help='Path to bishop executable for random art')
     parser.add_argument('--strategy', help='Specify a strategy')
@@ -260,6 +261,7 @@ if __name__ == '__main__':
         print('strategy =', args.strategy)
         print('username =', args.username)
         print('debug =', args.debug)
+        print('debug-lite =', args.debug_lite)
 
     if not args.site:
         exit(0)
