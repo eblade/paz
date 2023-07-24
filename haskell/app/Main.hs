@@ -3,7 +3,7 @@ module Main where
 import Options.Applicative
 import System.IO
 import Paz (makeStart, pazify, check, calculate, cutToString)
-import Password (getPassword, toPassword)
+import Password (getPassword)
 import Data.Maybe (fromMaybe)
 
 data Paz = Paz {
@@ -54,7 +54,7 @@ main = execParser opts
 
 completeOptions :: Paz -> IO Paz
 completeOptions options = do
-    newMaster <- getPassword $ toPassword (master options)
+    newMaster <- getPassword $ master options
     return options { master = newMaster }
 
 computeResult :: Paz -> IO String
