@@ -21,7 +21,21 @@ maintainer:         johan@egneblad.se
 -- category:
 extra-source-files: CHANGELOG.md
 
+common professional-properties
+    default-language: Haskell2010
+    build-depends:    base ^>=4.15.1.0,
+    ghc-options:
+        -Wall
+        -Wcompat
+        -Wincomplete-uni-patterns
+        -Wredundant-constraints
+        -Wnoncanonical-monad-instances
+        -- -Werror
+        -- -O2
+
 executable paz
+    import: professional-properties
+
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
@@ -33,10 +47,8 @@ executable paz
     --                   DeriveGeneric,
     --                   OverloadedStrings,
     --                   TypeOperators
-    build-depends:    base ^>=4.15.1.0,
-                      bytestring >=0.10.12.1,
+    build-depends:    bytestring >=0.10.12.1,
                       base64-bytestring ==1.2.1.0,
                       cryptohash-sha512 ==0.11.102.0,
                       optparse-applicative ==0.18.1.0
     hs-source-dirs:   app
-    default-language: Haskell2010
