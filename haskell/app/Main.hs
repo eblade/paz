@@ -1,9 +1,9 @@
 module Main where
 
 import Options.Applicative
-import Control.Exception
 import System.IO
 import Paz (makeStart, pazify, check, calculate, cutToString)
+import Password (getPassword, toPassword)
 import Data.Maybe (fromMaybe)
 
 data Paz = Paz {
@@ -40,7 +40,6 @@ paz = Paz
        <> metavar "INT"
        <> help "Minimum number of hash function passes" )
 
-data Password = Given String | Prompt
 
 main :: IO ()
 main = execParser opts
@@ -57,22 +56,6 @@ completeOptions :: Paz -> IO Paz
 completeOptions options = do
     newMaster <- getPassword $ toPassword (master options)
     return options { master = newMaster }
-
-toPassword :: String -> Password
-toPassword s = if s == "-"
-    then Prompt
-    else Given s
-
-getPassword :: Password -> IO String
-getPassword p = case p of
-        Prompt -> do 
-            hPutStr stderr "Password: "
-            withoutEcho getLine
-        Given s -> return s
-
-withoutEcho :: IO a -> IO a
-withoutEcho action =
-    finally (hSetEcho stdin False >> action) (hSetEcho stdin True)
 
 computeResult :: Paz -> IO String
 computeResult config = return $ cutToString (length_ config) result
