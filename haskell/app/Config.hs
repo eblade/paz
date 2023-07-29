@@ -5,6 +5,7 @@ module Config where
 import Text.ParserCombinators.ReadP
 import Data.Maybe (catMaybes)
 import qualified Data.Map as Map
+import System.Directory (doesFileExist)
 
 {-
 eol parses either the end of a line (char \n) or the file (eof, from ReadP), and throws it away. restOfLine takes this a bit further, and reads from its input until it gets to the end of a line, using eol. Both of these will show up in a few other, “bigger” parsers.
@@ -73,7 +74,7 @@ iniSection = do
 data Config = Config
     { keys :: Map.Map String String
     , sections :: Map.Map String (Map.Map String String)
-    }
+    } deriving (Show)
 
 ini :: ReadP Config
 ini = do
@@ -82,11 +83,33 @@ ini = do
     return $ Config keys (Map.fromList sections)
 
 parseConfigMaybe :: String -> Maybe Config
-parseConfigMaybe s =
-    parseMaybe ini s
+parseConfigMaybe = parseMaybe ini
 
 parseMaybe :: ReadP a -> String -> Maybe a
 parseMaybe parser input =
     case readP_to_S parser input of
         [] -> Nothing
         ((result, _):_) -> Just result
+
+surely c = case c of Just x -> x
+
+getSectionMaybe :: String -> Config -> Maybe (Map.Map String String)
+getSectionMaybe sectionName config =
+    Map.lookup sectionName (sections config)
+
+getValueMaybe :: String -> Map.Map String String -> Maybe String
+getValueMaybe key section =
+    Map.lookup key section
+
+getSections :: Config -> [String]
+getSections = Map.keys . sections
+
+loadConfigMaybe :: String -> IO (Maybe Config)
+loadConfigMaybe path = do
+    fileExists <- doesFileExist path
+    if fileExists
+        then do
+            text <- readFile path
+            return $ parseConfigMaybe text
+        else
+            return Nothing
