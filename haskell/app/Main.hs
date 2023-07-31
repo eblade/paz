@@ -2,7 +2,8 @@ module Main where
 
 import Options.Applicative
 import Paz (makeStart, pazify, check, calculate, cutToString)
-import Config (loadConfigMaybe, getSections, Config)
+import ConfigData (Config, getSections)
+import ConfigProvider (loadConfigMaybe)
 import Password (getPassword)
 import System.Directory (getHomeDirectory)
 import System.Exit
