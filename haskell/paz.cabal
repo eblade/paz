@@ -43,7 +43,8 @@ executable paz
                       Password,
                       ConfigData,
                       ConfigParser,
-                      ConfigProvider
+                      ConfigProvider,
+                      Resolve
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions: DataKinds,

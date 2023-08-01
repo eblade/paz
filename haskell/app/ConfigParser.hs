@@ -22,7 +22,7 @@ eol = choice
 
 iniKey :: ReadP (String, String)
 iniKey = do
-    name <- manyTill (satisfy (flip notElem "=;\n")) (char '=')
+    name <- manyTill (satisfy (flip notElem "=;\n")) (skipSpaces >> char '=' >> skipSpaces)
     value <- restOfLine
     return (name, value)
 

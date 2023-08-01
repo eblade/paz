@@ -7,11 +7,16 @@ data Config = Config
     , sections :: Map.Map String (Map.Map String String)
     } deriving (Show)
 
-surely c = case c of Just x -> x
+surely :: Maybe a -> a
+surely c = case c of
+    Just x -> x
+    Nothing -> error "Not so sure!"
 
-getSectionMaybe :: String -> Config -> Maybe (Map.Map String String)
-getSectionMaybe sectionName config =
-    Map.lookup sectionName (sections config)
+getSectionMaybe :: String -> Maybe Config -> Maybe (Map.Map String String)
+getSectionMaybe sectionName maybeConfig =
+    case maybeConfig of
+        Just config -> Map.lookup sectionName (sections config)
+        Nothing -> Nothing
 
 getValueMaybe :: String -> Map.Map String String -> Maybe String
 getValueMaybe key section =
