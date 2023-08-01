@@ -2,14 +2,13 @@ module Main where
 
 import Options.Applicative
 import Paz (makeStart, pazify, check, calculate, cutToString)
-import ConfigData (Config, getSections, getSectionMaybe, surely)
+import ConfigData (Config, getSections, getSectionMaybe)
 import ConfigProvider (loadConfigMaybe)
 import Password (getPassword)
 import Resolve (resolveInt)
 import System.Directory (getHomeDirectory)
 import System.Exit
 import Data.List (sort)
-import Data.Maybe (fromMaybe, isNothing)
 
 data CommandLineOptions = CommandLineOptions
     { maybeMaster :: Maybe String
@@ -25,6 +24,7 @@ data CompleteOptions = CompleteOptions
     , minIterations :: Int
     }
 
+defaults :: CompleteOptions
 defaults = CompleteOptions
     { master = ""
     , site = ""
@@ -79,11 +79,8 @@ completeOptions options = do
         Just theSite -> do
             finalMaster <- getPassword $ maybeMaster options
             localSite <- getSectionMaybe' theSite localConfig
-            print localSite
             remoteSite <- getSectionMaybe' theSite remoteConfig
-            print remoteSite
             defaultSite <- getSectionMaybe' "DEFAULT" localConfig
-            print defaultSite
             return CompleteOptions
                 { master = finalMaster
                 , site = theSite
