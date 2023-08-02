@@ -1,36 +1,43 @@
 module Main where
 
 import Options.Applicative
-import Paz (makeStart, pazify, check, calculate, cutToString)
+import Paz (makeStart, pazify, check, calculate, cutToString, appendRevision)
 import ConfigData (Config, getSections, getSectionMaybe)
 import ConfigProvider (loadConfigMaybe)
 import Password (getPassword)
-import Resolve (resolveInt)
+import Resolve (resolveInt, resolveMaybeInt)
 import System.Directory (getHomeDirectory)
 import System.Exit
 import Data.List (sort)
 
 data CommandLineOptions = CommandLineOptions
     { maybeMaster :: Maybe String
-    , maybeSite :: Maybe String
     , maybeLength :: Maybe Int
+    , maybeRevision :: Maybe Int
     , maybeMinIterations :: Maybe Int
-    }
+    , maybeSite :: Maybe String
+    } deriving (Show)
 
 data CompleteOptions = CompleteOptions
     { master :: String
-    , site :: String
     , length_ :: Int
+    , revision :: Maybe Int
     , minIterations :: Int
-    }
+    , site :: String
+    } deriving (Show)
 
 defaults :: CompleteOptions
 defaults = CompleteOptions
     { master = ""
-    , site = ""
     , length_ = 15
+    , revision = Nothing
     , minIterations = 10
+    , site = ""
     }
+
+-- We need to "double-Just" this because the maybeReader "un-Justs" once
+parseJust :: ReadM (Maybe Int)
+parseJust = maybeReader $ ( Just . Just . read )
 
 paz :: Parser CommandLineOptions
 paz = CommandLineOptions
@@ -39,23 +46,30 @@ paz = CommandLineOptions
        <> short 'm'
        <> metavar "PASSWORD"
        <> help "Your master password" ))
-    <*> (optional $ (argument str)
-        ( metavar "SITE"
-       <> help "The name of the site" ))
-    <*> option auto
+    <*> option parseJust
         ( long "length"
        <> short 'n'
        <> value Nothing
        <> showDefaultWith (\_ -> show $ length_ defaults)
        <> metavar "INT"
        <> help "Length of the generated password" )
-    <*> option auto
+    <*> (option parseJust
+        ( long "revision"
+       <> short 'r'
+       <> value Nothing
+       <> showDefaultWith (\_ -> show $ revision defaults)
+       <> metavar "INT"
+       <> help "Site revision (append this number to the site if specified)" ))
+    <*> option parseJust
         ( long "min-iterations"
        <> short 'i'
        <> value Nothing
        <> showDefaultWith (\_ -> show $ minIterations defaults)
        <> metavar "INT"
        <> help "Minimum number of hash function passes" )
+    <*> (optional $ (argument str)
+        ( metavar "SITE"
+       <> help "The name of the site" ))
 
 
 main :: IO ()
@@ -86,6 +100,7 @@ completeOptions options = do
                 , site = theSite
                 , length_ = resolveInt "length" (length_ defaults) (maybeLength options) remoteSite localSite defaultSite
                 , minIterations = resolveInt "min-iterations" (minIterations defaults) (maybeMinIterations options) remoteSite localSite defaultSite
+                , revision = resolveMaybeInt "revision" (revision defaults) (maybeRevision options) remoteSite localSite defaultSite
                 }
     where
         -- wrapper for returning IO (cannot use fmap because two args)
@@ -104,9 +119,11 @@ printSitesAndExit config = do
             Just c -> getSections c
 
 computeResult :: CompleteOptions -> IO String
-computeResult config = return $ cutToString (length_ config) result
+computeResult config = do
+    return $ cutToString (length_ config) result
     where
-        start = makeStart (master config) (site config)
+        start = makeStart (master config) revisionedSite
+        revisionedSite = appendRevision (revision config) (site config)
         calculate' = calculate (length_ config)
         (_, result) = pazify calculate' (check (length_ config) (minIterations config)) start
 

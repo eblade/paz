@@ -53,3 +53,9 @@ check plength miniterations n x = enough && (startsWithLowerCase pw) && (hasUppe
                     isNumber = x >= 48 && x <= 57
                     x = B.head xxs
                     xs = B.tail xxs
+
+appendRevision :: Maybe Int -> String -> String
+appendRevision maybeRevision site =
+    case maybeRevision of
+        Just revision -> site ++ (show revision)
+        Nothing -> site

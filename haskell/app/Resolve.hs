@@ -19,6 +19,23 @@ resolveInt name defaultValue maybeArg remote local defaults =
         maybeDefaultsValue = getIntFromMap' defaults
         getIntFromMap' = getIntFromMap name
 
+resolveMaybeInt :: String -> Maybe Int -> Maybe Int -> Maybe (Map.Map String String) -> Maybe (Map.Map String String)-> Maybe (Map.Map String String) -> Maybe Int
+resolveMaybeInt name defaultValue maybeArg remote local defaults =
+    case maybeArg of
+        Just arg -> Just arg
+        Nothing -> case maybeLocalValue of
+            Just localValue -> Just localValue
+            Nothing -> case maybeRemoteValue of 
+                Just remoteValue -> Just remoteValue
+                Nothing -> case maybeDefaultsValue of
+                    Just defaultsValue -> Just defaultsValue
+                    Nothing -> defaultValue
+    where
+        maybeLocalValue = getIntFromMap' local
+        maybeRemoteValue = getIntFromMap' remote
+        maybeDefaultsValue = getIntFromMap' defaults
+        getIntFromMap' = getIntFromMap name
+
 getIntFromMap :: String -> Maybe (Map.Map String String) -> Maybe Int
 getIntFromMap name maybeMap =
     case maybeMap of
