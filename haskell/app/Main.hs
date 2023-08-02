@@ -1,11 +1,11 @@
 module Main where
 
 import Options.Applicative
-import Paz (makeStart, pazify, check, calculate, cutToString, appendRevision)
+import Paz (makeStart, pazify, check, calculate, finalize, appendRevision)
 import ConfigData (Config, getSections, getSectionMaybe)
 import ConfigProvider (loadConfigMaybe)
 import Password (getPassword)
-import Resolve (resolveInt, resolveMaybeInt)
+import Resolve (resolveInt, resolveMaybeInt, resolveMaybeString)
 import System.Directory (getHomeDirectory)
 import System.Exit
 import Data.List (sort)
@@ -15,6 +15,7 @@ data CommandLineOptions = CommandLineOptions
     , maybeLength :: Maybe Int
     , maybeRevision :: Maybe Int
     , maybeMinIterations :: Maybe Int
+    , maybeAddition :: Maybe String
     , maybeSite :: Maybe String
     } deriving (Show)
 
@@ -23,6 +24,7 @@ data CompleteOptions = CompleteOptions
     , length_ :: Int
     , revision :: Maybe Int
     , minIterations :: Int
+    , addition :: Maybe String
     , site :: String
     } deriving (Show)
 
@@ -32,6 +34,7 @@ defaults = CompleteOptions
     , length_ = 15
     , revision = Nothing
     , minIterations = 10
+    , addition = Nothing
     , site = ""
     }
 
@@ -67,6 +70,11 @@ paz = CommandLineOptions
        <> showDefaultWith (\_ -> show $ minIterations defaults)
        <> metavar "INT"
        <> help "Minimum number of hash function passes" )
+    <*> (optional $ strOption
+        ( long "addition"
+       <> short 'a'
+       <> metavar "ADDITION"
+       <> help "Append this string to the end of the generated password" ))
     <*> (optional $ (argument str)
         ( metavar "SITE"
        <> help "The name of the site" ))
@@ -101,6 +109,7 @@ completeOptions options = do
                 , length_ = resolveInt "length" (length_ defaults) (maybeLength options) remoteSite localSite defaultSite
                 , minIterations = resolveInt "min-iterations" (minIterations defaults) (maybeMinIterations options) remoteSite localSite defaultSite
                 , revision = resolveMaybeInt "revision" (revision defaults) (maybeRevision options) remoteSite localSite defaultSite
+                , addition = resolveMaybeString "addition" (addition defaults) (maybeAddition options) remoteSite localSite defaultSite
                 }
     where
         -- wrapper for returning IO (cannot use fmap because two args)
@@ -120,10 +129,9 @@ printSitesAndExit config = do
 
 computeResult :: CompleteOptions -> IO String
 computeResult config = do
-    return $ cutToString (length_ config) result
+    return $ finalize (length_ config) (addition config) result
     where
         start = makeStart (master config) revisionedSite
         revisionedSite = appendRevision (revision config) (site config)
-        calculate' = calculate (length_ config)
-        (_, result) = pazify calculate' (check (length_ config) (minIterations config)) start
+        (_, result) = pazify calculate (check (length_ config) (minIterations config)) start
 

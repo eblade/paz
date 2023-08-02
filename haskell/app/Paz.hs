@@ -10,8 +10,16 @@ import qualified Data.ByteString.Char8 as C
 makeStart :: String -> String -> ByteString
 makeStart master site = C.pack (master ++ ":" ++ site)
 
+finalize :: Int -> Maybe String -> ByteString -> String
+finalize length_ maybeAddition bs =
+    case maybeAddition of
+        Just addition -> cut ++ addition
+        Nothing -> cut
+    where
+        cut = cutToString length_ bs
+
 cutToString :: Int -> ByteString -> String
-cutToString length = C.unpack . (B.take length)
+cutToString length_ = C.unpack . (B.take length_)
 
 pazify :: (ByteString -> ByteString) -> (Int -> ByteString -> Bool) -> ByteString -> (Int, ByteString)
 pazify = pazify' 1
@@ -22,8 +30,8 @@ pazify = pazify' 1
             where
                 xn = f xn_1
 
-calculate :: Int -> ByteString -> ByteString
-calculate length s = B.map translate (Base64.encode digest)
+calculate :: ByteString -> ByteString
+calculate s = B.map translate (Base64.encode digest)
     where
         digest = SHA512.finalize ctx
         ctx = SHA512.update ctx0 s
@@ -40,7 +48,7 @@ check plength miniterations n x = enough && (startsWithLowerCase pw) && (hasUppe
     where
         enough = (n >= miniterations)
         pw = B.take plength x
-        startsWithLowerCase x = ((B.head x) >= 97) && ((B.head x) <= 122)
+        startsWithLowerCase x' = ((B.head x') >= 97) && ((B.head x') <= 122)
         hasUpperAndNumber = f False False
             where
             f hasUpper hasNumber xxs
@@ -49,9 +57,9 @@ check plength miniterations n x = enough && (startsWithLowerCase pw) && (hasUppe
                 | hasUpper && isNumber = True
                 | otherwise = f (hasUpper || isUpper) (hasNumber || isNumber) xs
                 where
-                    isUpper = x >= 65 && x <= 90
-                    isNumber = x >= 48 && x <= 57
-                    x = B.head xxs
+                    isUpper = x' >= 65 && x' <= 90
+                    isNumber = x' >= 48 && x' <= 57
+                    x' = B.head xxs
                     xs = B.tail xxs
 
 appendRevision :: Maybe Int -> String -> String
