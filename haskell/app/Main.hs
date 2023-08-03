@@ -155,7 +155,9 @@ computeResult config = do
     -- print config
     return $ finalize (length_ config) (addition config) result
     where
+        (_, result) = pazify calculate' check' start
         start = makeStart (master config) revisionedSite
         revisionedSite = appendRevision (revision config) (site config)
-        (_, result) = pazify (calculate $ hash config) (check (length_ config) (minIterations config)) start
+        calculate' = calculate $ hash config
+        check' = check (length_ config) (minIterations config)
 
