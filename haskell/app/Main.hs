@@ -21,8 +21,8 @@ data CommandLineOptions = CommandLineOptions
     , maybeMinIterations :: Maybe Int
     , maybeAddition :: Maybe String
     , maybeHash :: Maybe String
-    , maybeLinebreak :: Bool
-    , maybeVerbose :: Bool
+    , surelyLinebreak :: Bool
+    , surelyVerbose :: Bool
     , maybeSite :: Maybe String
     } deriving (Show)
 
@@ -161,8 +161,8 @@ completeOptions options = do
                     Nothing remoteSite localSite defaultSite
                 , strategy = resolveString "strategy" (strategy defaults)
                     Nothing remoteSite localSite defaultSite
-                , linebreak = maybeLinebreak options
-                , verbose = maybeVerbose options
+                , linebreak = surelyLinebreak options
+                , verbose = surelyVerbose options
                 }
             _ <- when (verbose allButMaster) $ printConfig allButMaster
             finalMaster <- getPassword (maybeMaster options)
