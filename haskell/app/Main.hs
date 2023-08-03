@@ -2,6 +2,7 @@ module Main where
 
 import Options.Applicative
 import Paz (makeStart, pazify, check, calculate, finalize, appendRevision)
+import qualified Paz
 import ConfigData (Config, getSections, getSectionMaybe)
 import ConfigProvider (loadConfigMaybe)
 import Password (getPassword)
@@ -9,6 +10,7 @@ import Resolve (resolveInt, resolveMaybeInt, resolveMaybeString)
 import System.Directory (getHomeDirectory)
 import System.Exit
 import Data.List (sort)
+import Data.Char (toUpper)
 
 data CommandLineOptions = CommandLineOptions
     { maybeMaster :: Maybe String
@@ -16,6 +18,7 @@ data CommandLineOptions = CommandLineOptions
     , maybeRevision :: Maybe Int
     , maybeMinIterations :: Maybe Int
     , maybeAddition :: Maybe String
+    , maybeHash :: Maybe String
     , maybeSite :: Maybe String
     } deriving (Show)
 
@@ -25,6 +28,7 @@ data CompleteOptions = CompleteOptions
     , revision :: Maybe Int
     , minIterations :: Int
     , addition :: Maybe String
+    , hash :: Paz.Hash
     , site :: String
     } deriving (Show)
 
@@ -35,35 +39,46 @@ defaults = CompleteOptions
     , revision = Nothing
     , minIterations = 10
     , addition = Nothing
+    , hash = Paz.SHA512
     , site = ""
     }
 
 -- We need to "double-Just" this because the maybeReader "un-Justs" once
-parseJust :: ReadM (Maybe Int)
-parseJust = maybeReader $ ( Just . Just . read )
+parseJustInt :: ReadM (Maybe Int)
+parseJustInt = maybeReader $ ( Just . Just . read )
+
+parseHash :: Maybe String -> Paz.Hash
+parseHash maybeHashName =
+    case maybeHashName of
+        Just hashName -> case (map toUpper hashName) of
+            "SHA512" -> Paz.SHA512
+            "SHA256" -> Paz.SHA256
+            "MD5" -> Paz.MD5
+            _ -> error $ "unknown hash function: " ++ hashName
+        Nothing -> hash defaults
 
 paz :: Parser CommandLineOptions
 paz = CommandLineOptions
-    <$> (optional $ strOption
+    <$> ( optional $ strOption
         ( long "master"
        <> short 'm'
        <> metavar "PASSWORD"
        <> help "Your master password" ))
-    <*> option parseJust
+    <*> option parseJustInt
         ( long "length"
        <> short 'n'
        <> value Nothing
        <> showDefaultWith (\_ -> show $ length_ defaults)
        <> metavar "INT"
        <> help "Length of the generated password" )
-    <*> (option parseJust
+    <*> ( option parseJustInt
         ( long "revision"
        <> short 'r'
        <> value Nothing
        <> showDefaultWith (\_ -> show $ revision defaults)
        <> metavar "INT"
        <> help "Site revision (append this number to the site if specified)" ))
-    <*> option parseJust
+    <*> option parseJustInt
         ( long "min-iterations"
        <> short 'i'
        <> value Nothing
@@ -73,8 +88,15 @@ paz = CommandLineOptions
     <*> (optional $ strOption
         ( long "addition"
        <> short 'a'
+       <> showDefaultWith (\_ -> show $ addition defaults)
        <> metavar "ADDITION"
        <> help "Append this string to the end of the generated password" ))
+    <*> ( optional $ strOption
+        ( long "hash"
+       <> short 'H'
+       <> showDefaultWith (\_ -> show $ hash defaults)
+       <> metavar "HASH"
+       <> help "Choose what hash funtion to use (sha512, sha256 or md5)" ))
     <*> (optional $ (argument str)
         ( metavar "SITE"
        <> help "The name of the site" ))
@@ -110,6 +132,7 @@ completeOptions options = do
                 , minIterations = resolveInt "min-iterations" (minIterations defaults) (maybeMinIterations options) remoteSite localSite defaultSite
                 , revision = resolveMaybeInt "revision" (revision defaults) (maybeRevision options) remoteSite localSite defaultSite
                 , addition = resolveMaybeString "addition" (addition defaults) (maybeAddition options) remoteSite localSite defaultSite
+                , hash = parseHash $ resolveMaybeString "hash" (Just $ show $ hash defaults) (maybeHash options) remoteSite localSite defaultSite
                 }
     where
         -- wrapper for returning IO (cannot use fmap because two args)
@@ -129,9 +152,10 @@ printSitesAndExit config = do
 
 computeResult :: CompleteOptions -> IO String
 computeResult config = do
+    -- print config
     return $ finalize (length_ config) (addition config) result
     where
         start = makeStart (master config) revisionedSite
         revisionedSite = appendRevision (revision config) (site config)
-        (_, result) = pazify calculate (check (length_ config) (minIterations config)) start
+        (_, result) = pazify (calculate $ hash config) (check (length_ config) (minIterations config)) start
 

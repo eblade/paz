@@ -54,6 +54,8 @@ executable paz
     build-depends:    bytestring >=0.10.12.1,
                       base64-bytestring ==1.2.1.0,
                       cryptohash-sha512 ==0.11.102.0,
+                      cryptohash-sha256 ==0.11.102.1,
+                      cryptohash-md5 ==0.11.101.0,
                       optparse-applicative ==0.18.1.0,
                       directory ==1.3.6.2,
                       containers ==0.6.4.1
