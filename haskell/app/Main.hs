@@ -147,18 +147,27 @@ completeOptions options = do
             allButMaster <- return CompleteOptions
                 { master = ""
                 , site = theSite
-                , length_ = resolveInt "length" (length_ defaults) (maybeLength options) remoteSite localSite defaultSite
-                , minIterations = resolveInt "min-iterations" (minIterations defaults) (maybeMinIterations options) remoteSite localSite defaultSite
-                , revision = resolveMaybeInt "revision" (revision defaults) (maybeRevision options) remoteSite localSite defaultSite
-                , addition = resolveMaybeString "addition" (addition defaults) (maybeAddition options) remoteSite localSite defaultSite
-                , hash = parseHash $ resolveMaybeString "hash" (Just $ show $ hash defaults) (maybeHash options) remoteSite localSite defaultSite
-                , username = resolveMaybeString "username" (username defaults) Nothing remoteSite localSite defaultSite
-                , strategy = resolveString "strategy" (strategy defaults) Nothing remoteSite localSite defaultSite
+                , length_ = resolveInt "length" (length_ defaults)
+                    (maybeLength options) remoteSite localSite defaultSite
+                , minIterations = resolveInt "min-iterations" (minIterations defaults)
+                    (maybeMinIterations options) remoteSite localSite defaultSite
+                , revision = resolveMaybeInt "revision" (revision defaults)
+                    (maybeRevision options) remoteSite localSite defaultSite
+                , addition = resolveMaybeString "addition" (addition defaults)
+                    (maybeAddition options) remoteSite localSite defaultSite
+                , hash = parseHash $ resolveMaybeString "hash" (Just $ show $ hash defaults)
+                    (maybeHash options) remoteSite localSite defaultSite
+                , username = resolveMaybeString "username" (username defaults)
+                    Nothing remoteSite localSite defaultSite
+                , strategy = resolveString "strategy" (strategy defaults)
+                    Nothing remoteSite localSite defaultSite
                 , linebreak = maybeLinebreak options
                 , verbose = maybeVerbose options
                 }
             _ <- when (verbose allButMaster) $ printConfig allButMaster
-            finalMaster <- getPassword (maybeMaster options) (username allButMaster) (strategy allButMaster)
+            finalMaster <- getPassword (maybeMaster options)
+                                       (username allButMaster)
+                                       (strategy allButMaster)
             return allButMaster { master = finalMaster }
     where
         -- wrapper for returning IO (cannot use fmap because two args)
