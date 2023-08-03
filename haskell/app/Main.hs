@@ -8,7 +8,7 @@ import qualified Paz
 import ConfigData (Config, getSections, getSectionMaybe)
 import ConfigProvider (loadConfigMaybe)
 import Password (getPassword)
-import Resolve (resolveInt, resolveMaybeInt, resolveMaybeString)
+import Resolve (resolveInt, resolveMaybeInt, resolveString, resolveMaybeString)
 import System.Directory (getHomeDirectory)
 import System.Exit
 import Data.List (sort)
@@ -32,6 +32,8 @@ data CompleteOptions = CompleteOptions
     , minIterations :: Int
     , addition :: Maybe String
     , hash :: Paz.Hash
+    , username :: Maybe String
+    , strategy :: String
     , verbose :: Bool
     , site :: String
     } deriving (Show)
@@ -44,6 +46,8 @@ defaults = CompleteOptions
     , minIterations = 10
     , addition = Nothing
     , hash = Paz.SHA512
+    , username = Nothing
+    , strategy = "default"
     , verbose = False
     , site = ""
     }
@@ -74,21 +78,21 @@ paz = CommandLineOptions
        <> short 'n'
        <> value Nothing
        <> showDefaultWith (\_ -> show $ length_ defaults)
-       <> metavar "INT"
+       <> metavar "LENGTH"
        <> help "Length of the generated password" )
     <*> ( option parseJustInt
         ( long "revision"
        <> short 'r'
        <> value Nothing
        <> showDefaultWith (\_ -> show $ revision defaults)
-       <> metavar "INT"
+       <> metavar "REVISION"
        <> help "Site revision (append this number to the site if specified)" ))
     <*> option parseJustInt
         ( long "min-iterations"
        <> short 'i'
        <> value Nothing
        <> showDefaultWith (\_ -> show $ minIterations defaults)
-       <> metavar "INT"
+       <> metavar "MIN_ITERATIONS"
        <> help "Minimum number of hash function passes" )
     <*> ( optional $ strOption
         ( long "addition"
@@ -130,20 +134,24 @@ completeOptions options = do
     case (maybeSite options) of
         Nothing -> printSitesAndExit remoteConfig
         Just theSite -> do
-            finalMaster <- getPassword $ maybeMaster options
             localSite <- getSectionMaybe' theSite localConfig
             remoteSite <- getSectionMaybe' theSite remoteConfig
             defaultSite <- getSectionMaybe' "DEFAULT" localConfig
-            return CompleteOptions
-                { master = finalMaster
+            allButMaster <- return CompleteOptions
+                { master = ""
                 , site = theSite
                 , length_ = resolveInt "length" (length_ defaults) (maybeLength options) remoteSite localSite defaultSite
                 , minIterations = resolveInt "min-iterations" (minIterations defaults) (maybeMinIterations options) remoteSite localSite defaultSite
                 , revision = resolveMaybeInt "revision" (revision defaults) (maybeRevision options) remoteSite localSite defaultSite
                 , addition = resolveMaybeString "addition" (addition defaults) (maybeAddition options) remoteSite localSite defaultSite
                 , hash = parseHash $ resolveMaybeString "hash" (Just $ show $ hash defaults) (maybeHash options) remoteSite localSite defaultSite
+                , username = resolveMaybeString "username" (username defaults) Nothing remoteSite localSite defaultSite
+                , strategy = resolveString "strategy" (strategy defaults) Nothing remoteSite localSite defaultSite
                 , verbose = maybeVerbose options
                 }
+            _ <- when (verbose allButMaster) $ printConfig allButMaster
+            finalMaster <- getPassword (maybeMaster options) (username allButMaster) (strategy allButMaster)
+            return allButMaster { master = finalMaster }
     where
         -- wrapper for returning IO (cannot use fmap because two args)
         getSectionMaybe' name maybeConfig = do
@@ -162,7 +170,6 @@ printSitesAndExit config = do
 
 computeResult :: CompleteOptions -> IO String
 computeResult config = do
-    _ <- when (verbose config) $ printConfig config
     return $ finalize (length_ config) (addition config) result
     where
         (_, result) = pazify calculate' check' start
@@ -181,6 +188,10 @@ printConfig config = do
         Just r -> (show r)
         Nothing -> "Nothing")
     put $ "addition = " ++ (show $ addition config)
+    put $ "username = " ++ (case (username config) of
+        Just u -> u
+        Nothing -> "Nothing")
+    put $ "strategy = " ++ (strategy config)
     return ()
     where
         put = hPutStrLn stderr 
