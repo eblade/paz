@@ -2,10 +2,14 @@ module Resolve where
 
 import qualified Data.Map as Map
 
-type MaybeStringMap = Maybe (Map.Map String String)
+type MaybeMap = Maybe (Map.Map String String)
+type Getter a = (String -> MaybeMap -> Maybe a)
 
-resolve :: (String -> MaybeStringMap -> Maybe a) -> String -> a -> Maybe a -> MaybeStringMap -> MaybeStringMap -> MaybeStringMap -> a
-resolve getFromMap name defaultValue maybeArg remote local defaults =
+unit :: a -> a
+unit x = x
+
+resolve :: Getter a -> String -> a -> Maybe a -> MaybeMap -> MaybeMap -> MaybeMap -> a
+resolve get name defaultValue maybeArg remote local defaults =
     case maybeArg of
         Just arg -> arg
         Nothing -> case maybeLocalValue of
@@ -16,19 +20,19 @@ resolve getFromMap name defaultValue maybeArg remote local defaults =
                     Just defaultsValue -> defaultsValue
                     Nothing -> defaultValue
     where
-        maybeLocalValue = getFromMap' local
-        maybeRemoteValue = getFromMap' remote
-        maybeDefaultsValue = getFromMap' defaults
-        getFromMap' = getFromMap name
+        maybeLocalValue = get' local
+        maybeRemoteValue = get' remote
+        maybeDefaultsValue = get' defaults
+        get' = get name
 
-resolveInt :: String -> Int -> Maybe Int -> MaybeStringMap -> MaybeStringMap-> MaybeStringMap -> Int
+resolveInt :: String -> Int -> Maybe Int -> MaybeMap -> MaybeMap-> MaybeMap -> Int
 resolveInt = resolve getIntFromMap
 
-resolveString :: String -> String -> Maybe String -> MaybeStringMap -> MaybeStringMap -> MaybeStringMap -> String
+resolveString :: String -> String -> Maybe String -> MaybeMap -> MaybeMap -> MaybeMap -> String
 resolveString = resolve getStringFromMap
 
-resolveMaybe :: (String -> MaybeStringMap -> Maybe a) -> String -> Maybe a -> Maybe a -> MaybeStringMap -> MaybeStringMap -> MaybeStringMap -> Maybe a
-resolveMaybe getFromMap name defaultValue maybeArg remote local defaults =
+resolveMaybe :: Getter a -> String -> Maybe a -> Maybe a -> MaybeMap -> MaybeMap -> MaybeMap -> Maybe a
+resolveMaybe get name defaultValue maybeArg remote local defaults =
     case maybeArg of
         Just arg -> Just arg
         Nothing -> case maybeLocalValue of
@@ -39,28 +43,28 @@ resolveMaybe getFromMap name defaultValue maybeArg remote local defaults =
                     Just defaultsValue -> Just defaultsValue
                     Nothing -> defaultValue
     where
-        maybeLocalValue = getFromMap' local
-        maybeRemoteValue = getFromMap' remote
-        maybeDefaultsValue = getFromMap' defaults
-        getFromMap' = getFromMap name
+        maybeLocalValue = get' local
+        maybeRemoteValue = get' remote
+        maybeDefaultsValue = get' defaults
+        get' = get name
 
-resolveMaybeInt :: String -> Maybe Int -> Maybe Int -> MaybeStringMap -> MaybeStringMap-> MaybeStringMap -> Maybe Int
+resolveMaybeInt :: String -> Maybe Int -> Maybe Int -> MaybeMap -> MaybeMap-> MaybeMap -> Maybe Int
 resolveMaybeInt = resolveMaybe getIntFromMap
 
-resolveMaybeString :: String -> Maybe String -> Maybe String -> MaybeStringMap -> MaybeStringMap-> MaybeStringMap -> Maybe String
+resolveMaybeString :: String -> Maybe String -> Maybe String -> MaybeMap -> MaybeMap-> MaybeMap -> Maybe String
 resolveMaybeString = resolveMaybe getStringFromMap
 
-getIntFromMap :: String -> MaybeStringMap -> Maybe Int
-getIntFromMap name maybeMap =
+getFromMap :: (String -> a) -> String -> MaybeMap -> Maybe a
+getFromMap convert name maybeMap =
     case maybeMap of
         Just map_ -> case (Map.lookup name map_) of
-            Just s -> Just $ read s
+            Just s -> Just $ convert s
             Nothing -> Nothing
         Nothing -> Nothing
 
-getStringFromMap :: String -> MaybeStringMap -> Maybe String
-getStringFromMap name maybeMap =
-    case maybeMap of
-        Just map_ -> Map.lookup name map_
-        Nothing -> Nothing
+getIntFromMap :: String -> MaybeMap -> Maybe Int
+getIntFromMap = getFromMap read
+
+getStringFromMap :: String -> MaybeMap -> Maybe String
+getStringFromMap = getFromMap unit
 
