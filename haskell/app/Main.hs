@@ -204,7 +204,9 @@ printConfig config = do
     put $ "revision = " ++ (case (revision config) of
         Just r -> (show r)
         Nothing -> "Nothing")
-    put $ "addition = " ++ (show $ addition config)
+    put $ "addition = " ++ (case (addition config) of
+        Just a -> a
+        Nothing -> "Nothing")
     put $ "linebreak = " ++ (show $ linebreak config)
     put $ "username = " ++ (case (username config) of
         Just u -> u
