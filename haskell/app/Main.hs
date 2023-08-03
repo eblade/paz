@@ -21,6 +21,7 @@ data CommandLineOptions = CommandLineOptions
     , maybeMinIterations :: Maybe Int
     , maybeAddition :: Maybe String
     , maybeHash :: Maybe String
+    , maybeLinebreak :: Bool
     , maybeVerbose :: Bool
     , maybeSite :: Maybe String
     } deriving (Show)
@@ -34,6 +35,7 @@ data CompleteOptions = CompleteOptions
     , hash :: Paz.Hash
     , username :: Maybe String
     , strategy :: String
+    , linebreak :: Bool
     , verbose :: Bool
     , site :: String
     } deriving (Show)
@@ -48,6 +50,7 @@ defaults = CompleteOptions
     , hash = Paz.SHA512
     , username = Nothing
     , strategy = "default"
+    , linebreak = False
     , verbose = False
     , site = ""
     }
@@ -107,6 +110,10 @@ paz = CommandLineOptions
        <> metavar "HASH"
        <> help "Choose what hash funtion to use (sha512, sha256 or md5)" ))
     <*> switch
+        ( long "linebreak"
+       <> short 'l'
+       <> help "Print new line character after the password on stdout" )
+    <*> switch
         ( long "verbose"
        <> short 'v'
        <> help "Print all of the resulting options to stderr" )
@@ -119,7 +126,7 @@ main :: IO ()
 main = execParser opts
     >>= completeOptions
     >>= computeResult
-    >>= putStrLn
+    >>= printResult
     where
         opts = info (paz <**> helper)
           ( fullDesc
@@ -147,6 +154,7 @@ completeOptions options = do
                 , hash = parseHash $ resolveMaybeString "hash" (Just $ show $ hash defaults) (maybeHash options) remoteSite localSite defaultSite
                 , username = resolveMaybeString "username" (username defaults) Nothing remoteSite localSite defaultSite
                 , strategy = resolveString "strategy" (strategy defaults) Nothing remoteSite localSite defaultSite
+                , linebreak = maybeLinebreak options
                 , verbose = maybeVerbose options
                 }
             _ <- when (verbose allButMaster) $ printConfig allButMaster
@@ -168,9 +176,9 @@ printSitesAndExit config = do
             Nothing -> []
             Just c -> getSections c
 
-computeResult :: CompleteOptions -> IO String
+computeResult :: CompleteOptions -> IO (CompleteOptions, String)
 computeResult config = do
-    return $ finalize (length_ config) (addition config) result
+    return (config, ( finalize (length_ config) (addition config) result ) )
     where
         (_, result) = pazify calculate' check' start
         start = makeStart (master config) revisionedSite
@@ -188,6 +196,7 @@ printConfig config = do
         Just r -> (show r)
         Nothing -> "Nothing")
     put $ "addition = " ++ (show $ addition config)
+    put $ "linebreak = " ++ (show $ linebreak config)
     put $ "username = " ++ (case (username config) of
         Just u -> u
         Nothing -> "Nothing")
@@ -195,3 +204,9 @@ printConfig config = do
     return ()
     where
         put = hPutStrLn stderr 
+ 
+printResult :: (CompleteOptions, String) -> IO ()
+printResult (config, result) = do
+    if (linebreak config)
+        then putStrLn result
+        else putStr result
