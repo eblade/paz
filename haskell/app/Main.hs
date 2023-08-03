@@ -1,6 +1,8 @@
 module Main where
 
+import System.IO (hPutStrLn, stderr)
 import Options.Applicative
+import Control.Monad (when)
 import Paz (makeStart, pazify, check, calculate, finalize, appendRevision)
 import qualified Paz
 import ConfigData (Config, getSections, getSectionMaybe)
@@ -19,6 +21,7 @@ data CommandLineOptions = CommandLineOptions
     , maybeMinIterations :: Maybe Int
     , maybeAddition :: Maybe String
     , maybeHash :: Maybe String
+    , maybeVerbose :: Bool
     , maybeSite :: Maybe String
     } deriving (Show)
 
@@ -29,6 +32,7 @@ data CompleteOptions = CompleteOptions
     , minIterations :: Int
     , addition :: Maybe String
     , hash :: Paz.Hash
+    , verbose :: Bool
     , site :: String
     } deriving (Show)
 
@@ -40,6 +44,7 @@ defaults = CompleteOptions
     , minIterations = 10
     , addition = Nothing
     , hash = Paz.SHA512
+    , verbose = False
     , site = ""
     }
 
@@ -85,7 +90,7 @@ paz = CommandLineOptions
        <> showDefaultWith (\_ -> show $ minIterations defaults)
        <> metavar "INT"
        <> help "Minimum number of hash function passes" )
-    <*> (optional $ strOption
+    <*> ( optional $ strOption
         ( long "addition"
        <> short 'a'
        <> showDefaultWith (\_ -> show $ addition defaults)
@@ -97,6 +102,10 @@ paz = CommandLineOptions
        <> showDefaultWith (\_ -> show $ hash defaults)
        <> metavar "HASH"
        <> help "Choose what hash funtion to use (sha512, sha256 or md5)" ))
+    <*> switch
+        ( long "verbose"
+       <> short 'v'
+       <> help "Print all of the resulting options to stderr" )
     <*> (optional $ (argument str)
         ( metavar "SITE"
        <> help "The name of the site" ))
@@ -133,6 +142,7 @@ completeOptions options = do
                 , revision = resolveMaybeInt "revision" (revision defaults) (maybeRevision options) remoteSite localSite defaultSite
                 , addition = resolveMaybeString "addition" (addition defaults) (maybeAddition options) remoteSite localSite defaultSite
                 , hash = parseHash $ resolveMaybeString "hash" (Just $ show $ hash defaults) (maybeHash options) remoteSite localSite defaultSite
+                , verbose = maybeVerbose options
                 }
     where
         -- wrapper for returning IO (cannot use fmap because two args)
@@ -152,7 +162,7 @@ printSitesAndExit config = do
 
 computeResult :: CompleteOptions -> IO String
 computeResult config = do
-    -- print config
+    _ <- when (verbose config) $ printConfig config
     return $ finalize (length_ config) (addition config) result
     where
         (_, result) = pazify calculate' check' start
@@ -161,3 +171,16 @@ computeResult config = do
         calculate' = calculate $ hash config
         check' = check (length_ config) (minIterations config)
 
+printConfig :: CompleteOptions -> IO ()
+printConfig config = do
+    put $ "site = " ++ (site config)
+    put $ "hash = " ++ (show $ hash config)
+    put $ "length = " ++ (show $ length_ config)
+    put $ "min-iterations = " ++ (show $ minIterations config)
+    put $ "revision = " ++ (case (revision config) of
+        Just r -> (show r)
+        Nothing -> "Nothing")
+    put $ "addition = " ++ (show $ addition config)
+    return ()
+    where
+        put = hPutStrLn stderr 

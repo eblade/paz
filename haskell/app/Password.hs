@@ -6,11 +6,13 @@ import Control.Exception
 data Password = Given String | Prompt
 
 getPassword :: Maybe String -> IO String
-getPassword x = case x of
+getPassword maybeGiven = case maybeGiven of
         Nothing -> do 
             hPutStr stderr "Password: "
-            withoutEcho getLine
-        Just x -> return x
+            result <- withoutEcho getLine
+            hPutStrLn stderr "OK"
+            return result
+        Just given -> return given
 
 withoutEcho :: IO a -> IO a
 withoutEcho action =
