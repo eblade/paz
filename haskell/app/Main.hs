@@ -88,7 +88,7 @@ main = execParser opts
     where
         opts = info (paz <**> helper)
           ( fullDesc
-         <> progDesc "Deterministically generates a password based on input parameters"
+         <> progDesc "Deterministically generate a password based on input parameters (read from args, ~/.pazrc.remote and ~/.pazrc in that given priority)"
          <> header "paz - an SGP-based password generator" )
 
 completeOptions :: CommandLineOptions -> IO CompleteOptions
