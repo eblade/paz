@@ -5,6 +5,7 @@ import Options.Applicative
 import Control.Monad (when)
 import Paz (makeStart, pazify, check, calculate, finalize, appendRevision)
 import qualified Paz
+import qualified Bishop
 import ConfigData (Config, getSections, getSectionMaybe)
 import ConfigProvider (loadConfigMaybe)
 import Password (getPassword)
@@ -13,6 +14,7 @@ import System.Directory (getHomeDirectory)
 import System.Exit
 import Data.List (sort)
 import Data.Char (toUpper)
+import qualified Data.ByteString.Char8 as C
 
 data CommandLineOptions = CommandLineOptions
     { maybeMaster :: Maybe String
@@ -22,6 +24,7 @@ data CommandLineOptions = CommandLineOptions
     , maybeAddition :: Maybe String
     , maybeHash :: Maybe String
     , surelyLinebreak :: Bool
+    , surelyBishop :: Bool
     , surelyVerbose :: Bool
     , maybeSite :: Maybe String
     } deriving (Show)
@@ -36,6 +39,7 @@ data CompleteOptions = CompleteOptions
     , username :: Maybe String
     , strategy :: String
     , linebreak :: Bool
+    , bishop :: Bool
     , verbose :: Bool
     , site :: String
     } deriving (Show)
@@ -51,6 +55,7 @@ defaults = CompleteOptions
     , username = Nothing
     , strategy = "default"
     , linebreak = False
+    , bishop = False
     , verbose = False
     , site = ""
     }
@@ -114,6 +119,10 @@ paz = CommandLineOptions
        <> short 'l'
        <> help "Print new line character after the password on stdout" )
     <*> switch
+        ( long "bishop"
+       <> short 'b'
+       <> help "Print a drunken bishop pattern of the master password to stderr" )
+    <*> switch
         ( long "verbose"
        <> short 'v'
        <> help "Print all of the resulting options to stderr" )
@@ -162,12 +171,16 @@ completeOptions options = do
                 , strategy = resolveString "strategy" (strategy defaults)
                     Nothing remoteSite localSite defaultSite
                 , linebreak = surelyLinebreak options
+                , bishop = surelyBishop options
                 , verbose = surelyVerbose options
                 }
             _ <- when (verbose allButMaster) $ printConfig allButMaster
             finalMaster <- getPassword (maybeMaster options)
                                        (username allButMaster)
                                        (strategy allButMaster)
+            _ <- when (bishop allButMaster)
+                $ Bishop.printGraph stderr $ Bishop.drunkenWalk $ (calculate Paz.SHA512) $ C.pack
+                $ finalMaster ++ ['\n']
             return allButMaster { master = finalMaster }
     where
         -- wrapper for returning IO (cannot use fmap because two args)
