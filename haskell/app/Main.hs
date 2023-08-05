@@ -150,9 +150,9 @@ completeOptions options = do
     case (maybeSite options) of
         Nothing -> printSitesAndExit remoteConfig
         Just theSite -> do
-            localSite <- getSectionMaybe' theSite localConfig
-            remoteSite <- getSectionMaybe' theSite remoteConfig
-            defaultSite <- getSectionMaybe' "DEFAULT" localConfig
+            localSite <- pure $ getSectionMaybe theSite localConfig
+            remoteSite <- pure $ getSectionMaybe theSite remoteConfig
+            defaultSite <- pure $ getSectionMaybe "DEFAULT" localConfig
             allButMaster <- return CompleteOptions
                 { master = ""
                 , site = theSite
@@ -182,10 +182,6 @@ completeOptions options = do
                 $ Bishop.printGraph stderr $ Bishop.drunkenWalk $ (calculate Paz.SHA512) $ C.pack
                 $ finalMaster ++ ['\n']
             return allButMaster { master = finalMaster }
-    where
-        -- wrapper for returning IO (cannot use fmap because two args)
-        getSectionMaybe' name maybeConfig = do
-            return (getSectionMaybe name maybeConfig)
 
 printSitesAndExit :: Maybe Config -> IO CompleteOptions
 printSitesAndExit config = do
