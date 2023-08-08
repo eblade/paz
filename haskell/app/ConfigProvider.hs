@@ -13,3 +13,4 @@ loadConfigMaybe path = do
             return $ parseConfigMaybe text
         else
             return Nothing
+

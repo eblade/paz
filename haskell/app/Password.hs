@@ -22,3 +22,4 @@ getPassword maybeGiven maybeUsername strategy =
 withoutEcho :: IO a -> IO a
 withoutEcho action =
     finally (hSetEcho stdin False >> action) (hSetEcho stdin True)
+

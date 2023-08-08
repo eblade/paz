@@ -5,25 +5,28 @@ import Data.ByteString (ByteString)
 import Data.Word (Word8)
 import Data.Array
 import Data.Bits
-import Data.Char (ord, chr)
 import System.IO
 
 type BishopArray = Array Int Int
 
 data Direction = NW | NE | SW | SE deriving (Eq, Show)
+getDirection :: Int -> Direction
 getDirection 0 = NW
 getDirection 1 = NE
 getDirection 2 = SW
 getDirection 3 = SE
 getDirection _ = error "unknown direction"
 
+xlim :: Int
 xlim = 17
+ylim :: Int
 ylim = 9
+arsz :: Int
 arsz = xlim * ylim
 
 symbols :: Array Int Char
 symbols = listArray (0, (length raw) - 1) raw
-    where 
+    where
         raw = " .o+=*BOX@%&#/^SE"
 
 newBoard :: BishopArray
@@ -32,7 +35,7 @@ newBoard = listArray (0, (arsz - 1)) $ map (\_ -> 0) [1..arsz]
 printGraph :: Handle -> BishopArray -> IO ()
 printGraph handle b = do
     put "+--[ RandomArt ]--+"
-    mapM (\start -> put $ ( "|" ++ (translate $ slice start blist) ++ "|" )) starts
+    _ <- mapM (\start -> put $ ( "|" ++ (translate $ slice start blist) ++ "|" )) starts
     put "+-----------------+"
     where
         starts = [1, (xlim + 1)..arsz]
@@ -77,17 +80,11 @@ move pos direction = (updated, pos')
         pos' = (limit ylim y') * xlim + (limit xlim x')
         updated = pos /= pos'
 
-
 limit :: Int -> Int -> Int
 limit upper =
     (max 0) . (min (upper - 1))
 
 word8toInt :: Word8 -> Int
 word8toInt x = fromInteger x'
-    where
-        x' = toInteger x
-
-intToWord8 :: Word8 -> Int
-intToWord8 x = fromInteger x'
     where
         x' = toInteger x

@@ -1,5 +1,9 @@
 module Paz where
 
+{-
+This module implements the SuperGenPass (SGP) deterministic password generator algorithm. The defaults differ a bit and the minimum iterations can be set to somthing else than 10. The web implementation supports two hash functions, MD5 and SHA512, this one additionally supports SHA256. The only thing that is not implemented is the ability to choose a site-specific password.
+-}
+
 import qualified Data.ByteString as B
 import Data.ByteString (ByteString)
 import Data.Word (Word8)
@@ -25,6 +29,8 @@ finalize length_ maybeAddition bs =
 cutToString :: Int -> ByteString -> String
 cutToString length_ = C.unpack . (B.take length_)
 
+-- f is the hash function (get it with calculate <Hash>)
+-- p is the checker (use check)
 pazify :: (ByteString -> ByteString) -> (Int -> ByteString -> Bool) -> ByteString -> (Int, ByteString)
 pazify = pazify' 1
     where
@@ -35,6 +41,7 @@ pazify = pazify' 1
                 xn = B.map translate (Base64.encode xn_unencoded)
                 xn_unencoded = f xn_1
 
+                -- SGP replaces some of the standard base64 character for better password-likeness
                 translate :: Word8 -> Word8
                 translate 43 = 57 -- + -> 9
                 translate 47 = 56 -- / -> 8 

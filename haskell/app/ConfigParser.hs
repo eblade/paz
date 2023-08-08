@@ -7,10 +7,6 @@ import Text.ParserCombinators.ReadP
 import Data.Maybe (catMaybes)
 import qualified Data.Map as Map
 
-{-
-eol parses either the end of a line (char \n) or the file (eof, from ReadP), and throws it away. restOfLine takes this a bit further, and reads from its input until it gets to the end of a line, using eol. Both of these will show up in a few other, “bigger” parsers.
--}
-
 restOfLine :: ReadP String
 restOfLine = manyTill get eol
 
