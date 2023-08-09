@@ -139,37 +139,35 @@ main = execParser opts
     where
         opts = info (paz <**> helper)
           ( fullDesc
-         <> progDesc "Deterministically generate a password based on input parameters (read from args, ~/.pazrc.remote and ~/.pazrc in that given priority)"
+         <> progDesc "Deterministically generate a password based on input parameters (read from args and then ~/.pazrc)"
          <> header "paz - an SGP-based password generator" )
 
 completeOptions :: CommandLineOptions -> IO CompleteOptions
 completeOptions options = do
     homeDirectory <- getHomeDirectory
-    localConfig <- loadConfigMaybe $ homeDirectory ++ "/.pazrc"
-    remoteConfig <- loadConfigMaybe $ homeDirectory ++ "/.pazrc.remote"
+    config <- loadConfigMaybe $ homeDirectory ++ "/.pazrc"
     case (maybeSite options) of
-        Nothing -> printSitesAndExit remoteConfig
+        Nothing -> printSitesAndExit config
         Just theSite -> do
-            localSite <- pure $ getSectionMaybe theSite localConfig
-            remoteSite <- pure $ getSectionMaybe theSite remoteConfig
-            defaultSite <- pure $ getSectionMaybe "DEFAULT" localConfig
+            configSite <- pure $ getSectionMaybe theSite config
+            defaultSite <- pure $ getSectionMaybe "DEFAULT" config
             allButMaster <- return CompleteOptions
                 { master = ""
                 , site = theSite
                 , length_ = resolveInt "length" (length_ defaults)
-                    (maybeLength options) remoteSite localSite defaultSite
+                    (maybeLength options) configSite defaultSite
                 , minIterations = resolveInt "min-iterations" (minIterations defaults)
-                    (maybeMinIterations options) remoteSite localSite defaultSite
+                    (maybeMinIterations options) configSite defaultSite
                 , revision = resolveMaybeInt "revision" (revision defaults)
-                    (maybeRevision options) remoteSite localSite defaultSite
+                    (maybeRevision options) configSite defaultSite
                 , addition = resolveMaybeString "addition" (addition defaults)
-                    (maybeAddition options) remoteSite localSite defaultSite
+                    (maybeAddition options) configSite defaultSite
                 , hash = parseHash $ resolveMaybeString "hash" (Just $ show $ hash defaults)
-                    (maybeHash options) remoteSite localSite defaultSite
+                    (maybeHash options) configSite defaultSite
                 , username = resolveMaybeString "username" (username defaults)
-                    Nothing remoteSite localSite defaultSite
+                    Nothing configSite defaultSite
                 , strategy = resolveString "strategy" (strategy defaults)
-                    Nothing remoteSite localSite defaultSite
+                    Nothing configSite defaultSite
                 , linebreak = surelyLinebreak options
                 , bishop = surelyBishop options
                 , verbose = surelyVerbose options
