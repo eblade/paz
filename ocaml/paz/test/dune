@@ -1,0 +1,4 @@
+(test
+ (name test_paz)
+ (modules test_paz)
+ (libraries paz))
