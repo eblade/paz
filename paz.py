@@ -168,7 +168,7 @@ def complete_args(default, args, site):
     if args.wait_time is None:
         args.wait_time = site.getint('wait-time', default.getint('wait-time', 15))
     if args.bishop_path is None:
-        args.bishop_path = default.get('bishop-path')
+        args.bishop_path = default.get('bishop-path', 'bishop')
     if args.strategy is None:
         args.strategy = site.get('strategy', default.get('strategy', 'default'))
     if args.username is None:
