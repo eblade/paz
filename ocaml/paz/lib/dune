@@ -1,0 +1,3 @@
+(library
+ (name paz)
+ (libraries base64 sha))
