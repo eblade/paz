@@ -19,7 +19,7 @@
  (name paz)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune base64)
+ (depends ocaml dune base64 sha)
  (tags
   (topics "to describe" your project)))
 
