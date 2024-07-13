@@ -5,22 +5,22 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github eblade/paz))
 
-(authors "Author Name")
+(authors "Johan Egneblad")
 
-(maintainers "Maintainer Name")
+(maintainers "Johan Egneblad")
 
-(license LICENSE)
+(license "BSD 3-Clause license")
 
-(documentation https://url/to/documentation)
+(documentation https://github/eblade/paz)
 
 (package
  (name paz)
- (synopsis "A short synopsis")
- (description "A longer description")
+ (synopsis "A CLI version of SGP with support for config in a file")
+ (description "Supports MD5, SHA512 and SHA256")
  (depends ocaml dune base64 sha)
  (tags
-  (topics "to describe" your project)))
+  (topics "password manager" "password generator")))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html
