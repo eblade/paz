@@ -34,13 +34,26 @@ let speclist =
          ("-r", Arg.Set_int revision, "Password revision");
          ("-l", Arg.Set linebreak, "Append a linebreak to password");
          ("-a", Arg.Set_string addition, "Append this string to the password");
-         ("-U", Arg.Set_string username, "Login username");
+         ("-u", Arg.Set_string username, "Login username");
          ("-S", Arg.Set_string strategy, "Password strategy");
-         ("-m", Arg.Set_string master, "Specify master password")
-]
+         ("-m", Arg.Set_string master, "Specify master password")]
+
+let for_username s = match s with
+        | "" -> ""
+        | s -> " for " ^ s
+
+let echo t =
+        let tio = Unix.tcgetattr Unix.stdin in
+        tio.c_echo <- t;
+        Unix.tcsetattr Unix.stdin Unix.TCSANOW tio
 
 let get_password () = match !master with
-        | "" -> read_line ()
+        | "" -> (
+                (Printf.printf "Password%s: " (for_username !username));
+                 echo false;
+                 master := read_line ();
+                 echo true;
+                 !master)
         | s -> s
 
 let opt_zero n = if n = 0 then None else Some n
@@ -51,8 +64,6 @@ let run () =
                 | h :: _ -> h) in
         let source = make_source_str site (get_password ()) (opt_zero !revision) in
         let hashtype = parse_hashtype !hash in
-        print_endline source;
-        print_endline @@ get_hashname hashtype;
         print_endline @@ (make_password source hashtype !min_iterations !length) ^ !addition
 
 let () =
