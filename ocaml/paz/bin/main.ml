@@ -49,7 +49,7 @@ let echo t =
 
 let get_password () = match !master with
         | "" -> (
-                (Printf.printf "Password%s: " (for_username !username));
+                (Printf.fprintf stderr "Password%s: %!" (for_username !username));
                  echo false;
                  master := read_line ();
                  echo true;
@@ -64,7 +64,8 @@ let run () =
                 | h :: _ -> h) in
         let source = make_source_str site (get_password ()) (opt_zero !revision) in
         let hashtype = parse_hashtype !hash in
-        print_endline @@ (make_password source hashtype !min_iterations !length) ^ !addition
+        let ending = if !linebreak then "\n" else "" in
+        print_endline @@ (make_password source hashtype !min_iterations !length) ^ !addition ^ ending
 
 let () =
         Arg.parse speclist anon_site_fun usage_msg;
