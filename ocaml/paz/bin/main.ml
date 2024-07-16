@@ -43,26 +43,30 @@ let for_username s = match s with
         | s -> " for " ^ s
 
 let echo t =
-        let tio = Unix.tcgetattr Unix.stdin in
+        let module U = Unix in
+        let tio = U.tcgetattr U.stdin in
         tio.c_echo <- t;
-        Unix.tcsetattr Unix.stdin Unix.TCSANOW tio
+        U.tcsetattr U.stdin U.TCSANOW tio
 
-let get_password () = match !master with
-        | "" -> (
-                (Printf.fprintf stderr "Password%s: %!" (for_username !username));
+let get_password maybe username = match maybe with
+        | None -> (
+                let s = ref "" in
+                (Printf.fprintf stderr "Password%s: %!" (for_username username));
                  echo false;
-                 master := read_line ();
+                 s := read_line ();
                  echo true;
-                 !master)
-        | s -> s
-
-let opt_zero n = if n = 0 then None else Some n
+                 !s)
+        | Some s -> s
 
 let run () =
+        let module M = Paz.Maybe in
         let site = (match !sites with
                 | [] -> ""
                 | h :: _ -> h) in
-        let source = make_source_str site (get_password ()) (opt_zero !revision) in
+        let source = make_source_str
+                site
+                (get_password (M.empty !master) !username)
+                (M.zero !revision) in
         let hashtype = parse_hashtype !hash in
         let ending = if !linebreak then "\n" else "" in
         print_endline @@ (make_password source hashtype !min_iterations !length) ^ !addition ^ ending
