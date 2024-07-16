@@ -8,10 +8,10 @@ let echo t =
         tio.c_echo <- t;
         U.tcsetattr U.stdin U.TCSANOW tio
 
-let get_password master username = match master with
+let get_password master username strategy = match master with
         | None -> (
                 let s = ref "" in
-                (Printf.fprintf stderr "Password%s: %!" (for_username username));
+                (Printf.fprintf stderr "Password%s (%s): %!" (for_username username) strategy);
                  echo false;
                  s := read_line ();
                  echo true;
