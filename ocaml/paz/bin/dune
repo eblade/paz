@@ -1,4 +1,4 @@
 (executable
  (public_name paz)
  (name main)
- (libraries paz unix))
+ (libraries paz))

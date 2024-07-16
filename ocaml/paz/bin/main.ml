@@ -38,34 +38,15 @@ let speclist =
          ("-S", Arg.Set_string strategy, "Password strategy");
          ("-m", Arg.Set_string master, "Specify master password")]
 
-let for_username s = match s with
-        | "" -> ""
-        | s -> " for " ^ s
-
-let echo t =
-        let module U = Unix in
-        let tio = U.tcgetattr U.stdin in
-        tio.c_echo <- t;
-        U.tcsetattr U.stdin U.TCSANOW tio
-
-let get_password maybe username = match maybe with
-        | None -> (
-                let s = ref "" in
-                (Printf.fprintf stderr "Password%s: %!" (for_username username));
-                 echo false;
-                 s := read_line ();
-                 echo true;
-                 !s)
-        | Some s -> s
-
 let run () =
         let module M = Paz.Maybe in
+        let module P = Paz.Password in
         let site = (match !sites with
                 | [] -> ""
                 | h :: _ -> h) in
         let source = make_source_str
                 site
-                (get_password (M.empty !master) !username)
+                (P.get_password (M.empty !master) !username)
                 (M.zero !revision) in
         let hashtype = parse_hashtype !hash in
         let ending = if !linebreak then "\n" else "" in
