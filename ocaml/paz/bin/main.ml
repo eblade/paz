@@ -46,7 +46,7 @@ let run () =
                 | h :: _ -> h) in
         let source = make_source_str
                 site
-                (P.get_password (M.empty !master) !username)
+                (P.get_password (M.empty !master) (M.empty !username))
                 (M.zero !revision) in
         let hashtype = parse_hashtype !hash in
         let ending = if !linebreak then "\n" else "" in

@@ -1,6 +1,6 @@
 let for_username s = match s with
-        | "" -> ""
-        | s -> " for " ^ s
+        | None -> ""
+        | Some s -> " for " ^ s
 
 let echo t =
         let module U = Unix in
@@ -8,7 +8,7 @@ let echo t =
         tio.c_echo <- t;
         U.tcsetattr U.stdin U.TCSANOW tio
 
-let get_password maybe username = match maybe with
+let get_password master username = match master with
         | None -> (
                 let s = ref "" in
                 (Printf.fprintf stderr "Password%s: %!" (for_username username));
