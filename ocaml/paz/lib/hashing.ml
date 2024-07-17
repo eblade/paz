@@ -4,9 +4,10 @@ type hashtype =
         | MD5
 
 let parse_hashtype s = match (String.uppercase_ascii s) with
-        | "SHA512" -> SHA512
-        | "SHA256" -> SHA256
-        | "MD5" -> MD5
+        | "SHA512" -> Some SHA512
+        | "SHA256" -> Some SHA256
+        | "MD5" -> Some MD5
+        | "" -> None
         | _ -> raise (Invalid_argument ("Unsupported hash function: " ^ s))
 
 let get_hashname x = match x with
@@ -20,11 +21,6 @@ let get_hasher x =
         | SHA512 -> (function s -> Sha512.string s |> Sha512.to_bin)
         | SHA256 -> (function s -> Sha256.string s |> Sha256.to_bin)
         | MD5 -> D.MD5.string
-
-let make_source_str site master opt_revision =
-        master ^ ":" ^ site ^ (match opt_revision with
-        | Some revision -> Int.to_string revision
-        | None -> "")
 
 let make_password source hashtype min_iterations password_length =
         let hasher = get_hasher hashtype in

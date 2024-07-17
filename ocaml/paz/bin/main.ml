@@ -1,5 +1,3 @@
-open Paz.Hashing
-
 let usage_msg = "paz [opts] site"
 
 let verbose = ref false
@@ -10,17 +8,17 @@ let sites = ref []
 
 let master = ref ""
 
-let hash = ref "SHA512"
+let hash = ref ""
 
-let min_iterations = ref 10
+let min_iterations = ref 0
 
-let length = ref 15
+let length = ref 0
 
 let addition = ref ""
 
 let username = ref ""
 
-let strategy = ref "default"
+let strategy = ref ""
 
 let revision = ref 0
 
@@ -38,19 +36,33 @@ let speclist =
          ("-S", Arg.Set_string strategy, "Password strategy");
          ("-m", Arg.Set_string master, "Specify master password")]
 
+
 let run () =
         let module M = Paz.Maybe in
-        let module P = Paz.Password in
-        let site = (match !sites with
-                | [] -> ""
-                | h :: _ -> h) in
-        let source = make_source_str
-                site
-                (P.get_password (M.empty !master) (M.empty !username) !strategy)
-                (M.zero !revision) in
-        let hashtype = parse_hashtype !hash in
-        let ending = if !linebreak then "\n" else "" in
-        print_endline @@ (make_password source hashtype !min_iterations !length) ^ !addition ^ ending
+        let module P = Paz.Params in
+        let module H = Paz.Hashing in
+        let (cli_params : Paz.Params.incomplete_params) =
+                { verbose = M.not !verbose;
+                  linebreak = M.not !linebreak;
+                  master = M.empty !master;
+                  site = (match !sites with
+                        | [] -> None
+                        | h :: _ -> Some h);
+                  hash = H.parse_hashtype !hash;
+                  min_iterations = M.zero !min_iterations;
+                  length = M.zero !length;
+                  addition = M.empty !addition;
+                  username = M.empty !username;
+                  strategy = M.empty !strategy;
+                  revision = M.zero !revision;
+                } in
+        let params = P.finalize @@ P.merge cli_params P.defaults in
+        print_endline ((H.make_password
+                        params.source
+                        params.hash
+                        params.min_iterations
+                        params.length)
+                       ^ params.ending)
 
 let () =
         Arg.parse speclist anon_site_fun usage_msg;
