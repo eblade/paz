@@ -1,6 +1,5 @@
 type incomplete_params =
-        { verbose : bool option;
-          linebreak : bool option;
+        { linebreak : bool option;
           site : string option;
           master : string option;
           hash : Hashing.hashtype option;
@@ -13,8 +12,7 @@ type incomplete_params =
         }
 
 type params =
-        { verbose : bool;
-          source : string;
+        { source : string;
           hash : Hashing.hashtype;
           min_iterations : int;
           length : int;
@@ -25,8 +23,7 @@ type params =
         }
 
 let defaults =
-        { verbose = Some false;
-          linebreak = Some false;
+        { linebreak = Some false;
           site = None;
           master = None;
           hash = Some Hashing.SHA512;
@@ -43,8 +40,7 @@ let pick a b = match a with
         | None -> b
 
 let merge (a : incomplete_params) (b : incomplete_params) =
-        { verbose = pick a.verbose b.verbose;
-          linebreak = pick a.linebreak b.linebreak;
+        { linebreak = pick a.linebreak b.linebreak;
           site = pick a.site b.site;
           master = pick a.master b.master;
           hash = pick a.hash b.hash;
@@ -63,8 +59,7 @@ let make_source_str site master opt_revision =
 
 let finalize (p : incomplete_params) =
         let g = Option.get in
-        { verbose = g p.verbose;
-          source = make_source_str
+        { source = make_source_str
                 (g p.site)
                 (Password.get_password
                  p.master
@@ -81,3 +76,20 @@ let finalize (p : incomplete_params) =
                     if (g p.linebreak)
                     then "\n" else "")
         } 
+
+let print_params (p : incomplete_params) =
+        let print = Printf.fprintf stderr "%s = %s\n" in
+        let pt name maybe = match maybe with
+                | Some x -> (print name x)
+                | None -> (print name "(unset)") in
+        let m f maybe = match maybe with
+                | Some x -> Some (f x)
+                | None -> None in
+        pt "site" p.site;
+        pt "hash" @@ m Hashing.get_hashname p.hash;
+        pt "min_iterations" @@ m Int.to_string p.min_iterations;
+        pt "length" @@ m Int.to_string p.length;
+        pt "username" p.username;
+        pt "strategy" p.strategy;
+        pt "revision" @@ m Int.to_string p.revision;
+        pt "addition" p.addition;
