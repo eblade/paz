@@ -16,11 +16,10 @@ let get_hashname x = match x with
         | MD5 -> "MD5"
 
 let get_hasher x =
-        let module D = Digest in
         match x with
         | SHA512 -> (function s -> Sha512.string s |> Sha512.to_bin)
         | SHA256 -> (function s -> Sha256.string s |> Sha256.to_bin)
-        | MD5 -> D.MD5.string
+        | MD5 -> Digest.MD5.string
 
 let make_password source hashtype min_iterations password_length =
         let hasher = get_hasher hashtype in
@@ -29,7 +28,7 @@ let make_password source hashtype min_iterations password_length =
         let alphabet = Base64.make_alphabet Alphabet.base64_sgp_alphabet_string in
         let rec iterate iteration s =
                 let hash = hasher s
-                |> Base64.encode_string ~alphabet:alphabet
+                |> Base64.encode_string ~alphabet
                 |> Alphabet.clean_padding in
                 let result = cut hash in
                 if (check_iterations iteration && Check.check_rules result)

@@ -36,12 +36,11 @@ let speclist =
          ("-S", Arg.Set_string strategy, "Password strategy");
          ("-m", Arg.Set_string master, "Specify master password")]
 
-
 let run () =
         let module M = Paz.Maybe in
         let module P = Paz.Params in
         let module H = Paz.Hashing in
-        let (cli_params : Paz.Params.incomplete_params) =
+        let (cli_params : P.incomplete_params) =
                 { linebreak = M.not !linebreak;
                   master = M.empty !master;
                   site = (match !sites with
