@@ -1,7 +1,4 @@
-type hashtype =
-        | SHA512
-        | SHA256
-        | MD5
+type hashtype = | SHA512 | SHA256 | MD5
 
 let parse_hashtype s = match (String.uppercase_ascii s) with
         | "SHA512" -> Some SHA512
