@@ -16,9 +16,10 @@ let get_hashname x = match x with
         | MD5 -> "MD5"
 
 let get_hasher x =
+        let comp f g x = f(g(x)) in
         match x with
-        | SHA512 -> (function s -> Sha512.string s |> Sha512.to_bin)
-        | SHA256 -> (function s -> Sha256.string s |> Sha256.to_bin)
+        | SHA512 -> comp Sha512.to_bin Sha512.string
+        | SHA256 -> comp Sha256.to_bin Sha256.string 
         | MD5 -> Digest.MD5.string
 
 let make_password source hashtype min_iterations password_length =
