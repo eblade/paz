@@ -1,18 +1,17 @@
 let enough_iterations required actual =
         actual >= required
 
-let has_in_range a z =
-        let p c = ((Char.code c) >= a) && ((Char.code c) <= z) in
-        String.exists p
-
-let is_lower c =
-        let a = Char.code 'a' in
-        let z = Char.code 'z' in
-        let n = Char.code c in
-        n >= a && n <= z
-
-let has_upper = has_in_range (Char.code 'A') (Char.code 'Z')
-let has_lower = has_in_range (Char.code 'a') (Char.code 'z')
-let has_number = has_in_range (Char.code '0') (Char.code '9')
-let starts_with_lower s = is_lower @@ String.get s 0
-let check_rules s = has_upper s && has_lower s && has_number s && starts_with_lower s
+let check_rules s =
+        let is_in_range a z c =
+                let a' = Char.code a in
+                let z' = Char.code z in
+                let c' = Char.code c in
+                c' >= a' && c' <= z' in
+        let has_in_range a z =
+                String.exists @@ is_in_range a z in
+        let first_in_range a z s = is_in_range a z @@ String.get s 0 in
+        let fs = [ has_in_range 'A' 'Z';
+                   has_in_range 'a' 'z';
+                   has_in_range '0' '9';
+                   first_in_range 'a' 'z' ] in
+        List.fold_left (&&) true @@ List.map (function f -> f(s)) fs
