@@ -56,8 +56,8 @@ let run () =
                 } in
         let merged = P.merge cli_params P.defaults in
         let _ = if !verbose
-        then (P.print_params merged)
-        else () in
+                then (P.print_params merged)
+                else () in
         let params = P.finalize merged in
         print_endline ((H.make_password
                         params.source
