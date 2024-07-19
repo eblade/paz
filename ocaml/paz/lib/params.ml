@@ -35,11 +35,10 @@ let defaults =
           revision = None;
         }
 
-let pick a b = match a with
-        | Some _ -> a
-        | None -> b
-
 let merge (a : incomplete_params) (b : incomplete_params) =
+        let pick a b = match a with
+                | Some _ -> a
+                | None -> b in
         { linebreak = pick a.linebreak b.linebreak;
           site = pick a.site b.site;
           master = pick a.master b.master;
@@ -52,13 +51,13 @@ let merge (a : incomplete_params) (b : incomplete_params) =
           revision = pick a.revision b.revision;
         } 
 
-let make_source_str site master opt_revision =
-        master ^ ":" ^ site ^ (match opt_revision with
-        | Some revision -> Int.to_string revision
-        | None -> "")
 
 let finalize (p : incomplete_params) =
         let g = Option.get in
+        let make_source_str site master revision =
+                master ^ ":" ^ site ^ (match revision with
+                | Some revision -> Int.to_string revision
+                | None -> "") in
         { source = make_source_str
                 (g p.site)
                 (Password.get_password
