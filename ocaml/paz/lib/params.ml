@@ -1,4 +1,4 @@
-type incomplete_params =
+type user_params =
         { linebreak : bool option;
           site : string option;
           master : string option;
@@ -35,7 +35,7 @@ let defaults =
           revision = None;
         }
 
-let merge (a : incomplete_params) (b : incomplete_params) =
+let merge (a : user_params) (b : user_params) =
         let pick a b = match a with
                 | Some _ -> a
                 | None -> b in
@@ -52,7 +52,7 @@ let merge (a : incomplete_params) (b : incomplete_params) =
         } 
 
 
-let finalize (p : incomplete_params) =
+let finalize (p : user_params) =
         let g = Option.get in
         let make_source_str site master revision =
                 master ^ ":" ^ site ^ (match revision with
@@ -76,7 +76,7 @@ let finalize (p : incomplete_params) =
                     then "\n" else "")
         } 
 
-let print_params (p : incomplete_params) =
+let print_params (p : user_params) =
         let print = Printf.fprintf stderr "%s = %s\n" in
         let pt name maybe = match maybe with
                 | Some x -> (print name x)
