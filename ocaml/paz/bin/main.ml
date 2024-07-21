@@ -36,6 +36,25 @@ let speclist =
          ("-S", Arg.Set_string strategy, "Password strategy");
          ("-m", Arg.Set_string master, "Specify master password")]
 
+let run_password (cli_params : Paz.Params.user_params) =
+        let module P = Paz.Params in
+        let module H = Paz.Hashing in
+        let merged = P.merge cli_params P.defaults in
+        let _ = if !verbose
+                then (P.print_params merged)
+                else () in
+        let params = P.finalize merged in
+        print_endline ((H.make_password
+                        params.source
+                        params.hash
+                        params.min_iterations
+                        params.length)
+                       ^ params.ending)
+
+let run_list_sites () =
+        let sites = Paz.Ini.read_sections "/home/johan/.pazrc" in
+        List.iter print_endline sites
+
 let run () =
         let module M = Paz.Maybe in
         let module P = Paz.Params in
@@ -54,17 +73,9 @@ let run () =
                   strategy = M.empty !strategy;
                   revision = M.zero !revision;
                 } in
-        let merged = P.merge cli_params P.defaults in
-        let _ = if !verbose
-                then (P.print_params merged)
-                else () in
-        let params = P.finalize merged in
-        print_endline ((H.make_password
-                        params.source
-                        params.hash
-                        params.min_iterations
-                        params.length)
-                       ^ params.ending)
+        match cli_params.site with
+        | Some _ -> run_password cli_params
+        | None -> run_list_sites ()
 
 let () =
         Arg.parse speclist anon_site_fun usage_msg;
