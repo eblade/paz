@@ -1,5 +1,7 @@
 let usage_msg = "paz [opts] site"
 
+let ini_path = (Unix.getenv "HOME") ^ "/.pazrc"
+
 let verbose = ref false
 
 let linebreak = ref false
@@ -38,8 +40,12 @@ let speclist =
 
 let run_password (cli_params : Paz.Params.user_params) =
         let module P = Paz.Params in
+        let module I = Paz.Ini in
         let module H = Paz.Hashing in
-        let merged = P.merge cli_params P.defaults in
+        let merged = cli_params 
+        |> P.merge (I.read_section ini_path (Option.get cli_params.site))
+        |> P.merge (I.read_section ini_path "DEFAULT")
+        |> P.merge P.defaults in
         let _ = if !verbose
                 then (P.print_params merged)
                 else () in
@@ -52,7 +58,7 @@ let run_password (cli_params : Paz.Params.user_params) =
                        ^ params.ending)
 
 let run_list_sites () =
-        let sites = Paz.Ini.read_sections "/home/johan/.pazrc" in
+        let sites = Paz.Ini.read_sections ini_path in
         List.iter print_endline sites
 
 let run () =
