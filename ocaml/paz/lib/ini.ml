@@ -6,6 +6,8 @@ let make_section s =
                 else None)
 
 let read_sections filename =
+        if Sys.file_exists filename
+        then
         let f = open_in filename in
         let rec collect l =
                 match input_line f with
@@ -15,8 +17,11 @@ let read_sections filename =
                         | None -> l))
                 | exception End_of_file -> close_in f; List.rev l in
         List.sort compare @@ collect []
+        else []
 
 let read_section filename wanted_section =
+        if Sys.file_exists filename
+        then
         let f = open_in filename in
         let make_param line = 
                 match List.map String.trim (String.split_on_char '=' line) with
@@ -33,3 +38,4 @@ let read_section filename wanted_section =
                                 else collect false params))
                 | exception End_of_file -> close_in f; params in
         collect false Params.empty
+        else Params.empty
