@@ -13,7 +13,7 @@
 
 (license "BSD 3-Clause license")
 
-(documentation https://github/eblade/paz)
+(documentation https://github.com/eblade/paz)
 
 (package
  (name paz)
