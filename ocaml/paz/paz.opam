@@ -7,7 +7,7 @@ authors: ["Johan Egneblad"]
 license: "BSD 3-Clause license"
 tags: ["topics" "password manager" "password generator"]
 homepage: "https://github.com/eblade/paz"
-doc: "https://github/eblade/paz"
+doc: "https://github.com/eblade/paz"
 bug-reports: "https://github.com/eblade/paz/issues"
 depends: [
   "ocaml"
