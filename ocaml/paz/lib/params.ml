@@ -13,6 +13,7 @@ type user_params =
 
 type params =
         { source : string;
+          master : string;
           hash : Hashing.hashtype;
           min_iterations : int;
           length : int;
@@ -83,17 +84,13 @@ let merge (a : user_params) (b : user_params) =
 
 let finalize (p : user_params) =
         let g = Option.get in
-        let make_source_str site master revision =
-                master ^ ":" ^ site ^ (match revision with
+        let master = Password.get_password p.master p.username (g p.strategy) in
+        let source =
+                master ^ ":" ^ (g p.site) ^ (match p.revision with
                 | Some revision -> Int.to_string revision
                 | None -> "") in
-        { source = make_source_str
-                (g p.site)
-                (Password.get_password
-                 p.master
-                 p.username
-                 (g p.strategy))
-                p.revision;
+        { source = source;
+          master = master;
           hash = g p.hash;
           min_iterations = g p.min_iterations;
           length = g p.length;

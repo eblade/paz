@@ -7,7 +7,7 @@ let parse_hashtype s = match (String.uppercase_ascii s) with
         | "" -> None
         | _ -> raise (Invalid_argument ("Unsupported hash function: " ^ s))
 
-let get_hashname x = match x with
+let get_hashname = function
         | SHA512 -> "SHA512"
         | SHA256 -> "SHA256"
         | MD5 -> "MD5"
