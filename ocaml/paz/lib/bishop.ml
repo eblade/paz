@@ -38,6 +38,8 @@ let drunken_walk (s : string) =
                 | SE -> (x + 1, y + 1) in
                 (limit 0 (ylim - 1) y') * xlim + (limit 0 (xlim - 1) x')
         in
+        (* stage is a group 0-3 of 2 bits in an 8 bit int (ascii code).
+           it wil give the direction to move (of the above four) *)
         let rec walk pos stage l = match (stage, l) with
         | (_, []) -> ()
         | (4, _ :: xs) -> walk pos 0 xs
