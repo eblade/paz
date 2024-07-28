@@ -63,7 +63,7 @@ let apply (p : user_params) key value =
         | "username" -> { p with username = Some value }
         | "strategy" -> { p with strategy = Some value }
         | "revision" -> { p with revision = Some (int_of_string value) }
-        | _ -> raise (Invalid_argument ("Not a valid param " ^ key ^ " = " ^ value))
+        | _ -> p
 
 (* prefer b, so the function may be piped *)
 let merge (a : user_params) (b : user_params) =
