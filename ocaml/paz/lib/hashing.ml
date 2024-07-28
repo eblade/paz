@@ -1,4 +1,4 @@
-type hashtype = | SHA512 | SHA256 | MD5
+type hashtype = SHA512 | SHA256 | MD5
 
 let parse_hashtype s = match (String.uppercase_ascii s) with
         | "SHA512" -> Some SHA512
@@ -20,10 +20,10 @@ let get_hasher x =
         | MD5 -> Digest.MD5.string
 
 let make_password source hashtype min_iterations password_length =
-        let hasher = get_hasher hashtype in
-        let check_iterations = Check.enough_iterations min_iterations in
-        let cut = function s -> String.sub s 0 password_length in
-        let alphabet = Base64.make_alphabet Alphabet.base64_sgp_alphabet_string in
+        let hasher = get_hasher hashtype
+        and check_iterations = Check.enough_iterations min_iterations
+        and cut = function s -> String.sub s 0 password_length
+        and alphabet = Base64.make_alphabet Alphabet.base64_sgp_alphabet_string in
         let rec iterate iteration s =
                 let hash = hasher s
                 |> Base64.encode_string ~alphabet

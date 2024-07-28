@@ -65,6 +65,7 @@ let apply (p : user_params) key value =
         | "revision" -> { p with revision = Some (int_of_string value) }
         | _ -> raise (Invalid_argument ("Not a valid param " ^ key ^ " = " ^ value))
 
+(* prefer b, so the function may be piped *)
 let merge (a : user_params) (b : user_params) =
         let pick a b = match b with
                 | Some _ -> b
