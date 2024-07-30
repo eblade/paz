@@ -1,7 +1,8 @@
 let parse_title s =
   let sw = String.starts_with ~prefix:"["
-  and ew = String.ends_with ~suffix:"]" in
-  if sw s && ew s then Some (String.sub s 1 (String.length s - 2)) else None
+  and ew = String.ends_with ~suffix:"]"
+  and ts = String.trim s in
+  if sw ts && ew ts then Some (String.sub ts 1 (String.length ts - 2)) else None
 
 let read_sections filename =
   if Sys.file_exists filename then
