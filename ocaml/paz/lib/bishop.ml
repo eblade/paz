@@ -48,11 +48,11 @@ let drunken_walk (s : string) =
   let rec walk pos stage l =
     match (stage, l) with
     | _, [] -> ()
-    | 4, _ :: xs -> walk pos 0 xs
-    | stage, x :: xs ->
-        let pos' = move pos @@ int_to_direction (Int.logand x 3) in
+    | 4, _ :: tl -> walk pos 0 tl
+    | stage, hd :: tl ->
+        let pos' = move pos @@ int_to_direction (Int.logand hd 3) in
         board.(pos') <- (board.(pos') + if pos' = pos then 0 else 1);
-        walk pos' (stage + 1) (Int.shift_right x 2 :: xs)
+        walk pos' (stage + 1) (Int.shift_right hd 2 :: tl)
   in
   walk 76 0 l;
   board
