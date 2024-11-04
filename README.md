@@ -67,18 +67,18 @@ Paz will print out all available sites if run with no arguments. This can be use
 
 ```fish
 function pac
-    paz $argv -b | xclip -i -selection clipboard
+    paz $argv -b | wl-copy
     echo "Password will self-destruct in 15 seconds"
     sleep 15
-    echo -n "poff" | xclip -i -selection clipboard
+    echo -n "poff" | wl-copy
     echo "Done"
 end
 
 function pas
-    paz $argv -b | xclip -i -selection primary
+    paz $argv -b | wl-copy --primary
     echo "Password will self-destruct in 15 seconds"
     sleep 15
-    echo "poff" | xclip -i -selection primary
+    echo "poff" | wl-copy --primary
     echo "Done"
 end
 
@@ -89,7 +89,6 @@ complete --command pas --arguments '(paz)' -x
 
 Notes:
 
-- On wayland you would use `wl-copy` and `wl-copy --primary`
 - In bash, you can do something a bit uglier to achieve the same result
 - This is for the Ocaml version, Python would require the `-s` flag to print the result to stdout
 - This assumes the `paz` executable is in the `$PATH`
