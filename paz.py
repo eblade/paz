@@ -147,7 +147,8 @@ def load_config(args):
     if args.site is None:
         if args.export_nopaz:
             with args.export_nopaz.open('w') as f:
-                f.write('# NOPAZ EXPORT\n\n')
+                f.write('# NOPAZ EXPORT\n')
+                by_category = dict()
                 for site in sorted(config.sections()):
                     site_config = config[site]
                     revision = site_config.get('revision', '0')
@@ -163,7 +164,19 @@ def load_config(args):
                     if email := site_config.get('email'):
                         notes.append(f'email: {email}')
                     notes_str = quote_plus('\n'.join(notes))
-                    f.write(f'- [{site}](https://www.n0fa.de/nopaz/?debug=1&adv=1&special=default&site={site}&revision={revision}&algorithm={hash}&append={append}&minIterations={min_iterations}&length={length}&notes={notes_str})\n')
+                    category = site_config.get('category', '99 No category')
+                    row = f'- [{site}](https://www.n0fa.de/nopaz/?debug=1&adv=1&special=default&site={site}&revision={revision}&algorithm={hash}&append={append}&minIterations={min_iterations}&length={length}&notes={notes_str})\n'
+                    if category in by_category:
+                        by_category[category].append(row)
+                    else:
+                        by_category[category] = [row]
+
+                for category, rows in sorted(by_category.items()):
+                    f.write(f'\n## {category}\n\n')
+                    for row in rows:
+                        f.write(row)
+
+
         else:
             for site in config.sections():
                 print(site)
