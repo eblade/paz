@@ -7,6 +7,8 @@ import base64
 import re
 import argparse
 import time
+from pathlib import Path
+from urllib.parse import quote_plus
 
 
 class Resources:
@@ -143,8 +145,28 @@ def load_config(args):
             config.read(config_path)
 
     if args.site is None:
-        for site in config.sections():
-            print(site)
+        if args.export_nopaz:
+            with args.export_nopaz.open('w') as f:
+                f.write('# NOPAZ EXPORT\n\n')
+                for site in sorted(config.sections()):
+                    site_config = config[site]
+                    revision = site_config.get('revision', '0')
+                    hash = site_config.get('hash', 'sha512')
+                    append = site_config.get('addition', '')
+                    min_iterations = site_config.get('min-iterations', '10')
+                    length = site_config.get('length', '15')
+                    notes = []
+                    if username := site_config.get('username'):
+                        notes.append(f'username: {username}')
+                    if strategy := site_config.get('strategy'):
+                        notes.append(f'strategy: {strategy}')
+                    if email := site_config.get('email'):
+                        notes.append(f'email: {email}')
+                    notes_str = quote_plus('\n'.join(notes))
+                    f.write(f'- [{site}](https://www.n0fa.de/nopaz/?debug=1&adv=1&special=default&site={site}&revision={revision}&algorithm={hash}&append={append}&minIterations={min_iterations}&length={length}&notes={notes_str})\n')
+        else:
+            for site in config.sections():
+                print(site)
 
     if args.site is not None and args.site in config.sections():
         site = config[args.site] or default
@@ -232,6 +254,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--debug', action='store_true', help='Print some debug info along the way')
     parser.add_argument('-D', '--debug-lite', action='store_true', help='Print a little debug info along the way')
     parser.add_argument('-b', '--bishop', action='store_true', help='Use bishop to paint random art on stderr')
+    parser.add_argument('--export-nopaz', type=Path, help='Export to a markdown documents with nopaz links')
     parser.add_argument('--bishop-path', help='Path to bishop executable for random art')
     parser.add_argument('--strategy', help='Specify a strategy')
     parser.add_argument('--username', help='Specify a username')
