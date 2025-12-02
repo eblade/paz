@@ -1,12 +1,13 @@
+
 # paz
 
 Paz is a password tool for the command line basd on [SGP](https://chriszarate.github.io/supergenpass/), or SuperGenPass. The idea is simple, just make a string out of the master password and the site, and hash that a few times. Then you (sort of) base64 encode it and cut it to the desired length. If it fulfills some popular random requirements like containing lower case and upper case letter and a number, we're done. If not, re-hash and repeat.
 
 You can regard SGP as a password manager that has no vault, and definitely no cloud anything.
 
-This CLI adds a couple of features, most importantly the possiblity to store sites and their settings in an ini file.
+This CLI adds a couple of features, most importantly the possibility to store sites and their settings in an ini file.
 
-It is only meant to run on UNIX-like systems, but should run on wsl or cygwin.
+It is only meant to run on UNIX-like systems, but should run on WSL or Cygwin.
 
 ## Implementations
 
@@ -46,20 +47,20 @@ hash = md5
 revision = 4
 ```
 
-Avaliable settings are (a little bit depending on implementation):
+Available settings are (a little bit depending on implementation):
 
 - `length` (int) the generated password length (before additions)
 - `min-iterations` (int) the minimum number of hash iterations to do
 - `hash` (string) the hash function to use. can be MD5, SHA512, or SHA256. The latter is not supported by the original SGP js applet.
-- `revision` (int) is a number that if `>0`, will be appended to the site name. This is useful for sites that require periodica; password changes.
+- `revision` (int) is a number that if `>0`, will be appended to the site name. This is useful for sites that require periodical password changes.
 - `addition` (string) a bit to add at the and of the password in order to conform to arbitrary password rules.
 - `username` (string) will be shown at the master password prompt
 - `strategy` (string) a hint towards which master password to use if you have several
-- `linebreak` (yes/no) add a linebreak after the password
+- `linebreak` (yes/no) add a line break after the password
 
 You are free to add any other keys as notes. They will be ignored.
 
-Paz does no longer have any built-in way of synching the ini file, but something like syncthing and a symlink should be fine for most cases.
+Paz does no longer have any built-in way of syncing the ini file, but something like Syncthing and a symlink should be fine for most cases.
 
 ## Auto-completion
 
@@ -106,12 +107,12 @@ Notes:
   - Has at least one lower case letter
   - Has at least one number
   - Starts with a lower case letter
-- If the rules are not satisfied, jump back to (reqursion point) with `hash` as `source`.
+- If the rules are not satisfied, jump back to (recursion point) with `hash` as `source`.
 - Return `<password>[addition]`
 
 ## Maintainer
 
-Johan Egneblad (johan at egneblad.se) is the author and maintainer of this program. Exceptions to thisi are:
+Johan Egneblad (johan at egneblad.se) is the author and maintainer of this program. Exceptions to this are:
 
 - `pyperclip.py` is not my code
 - `bishop.c` is not my code either
